@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>瑞士輪與雙淘汰賽程管理系統 (單場總決賽版)</title>
+    <style>
+        /* 全局與暗色主題設定 */
+        :root {
+            --bg-color: #121212;
+            --card-bg: #1e1e1e;
+            --text-main: #ffffff;
+            --accent-color: #00d2ff; /* 淺藍色字體與線條顏色 */
+            --btn-hover: #3a86ff;
+            --disabled: #555555;
+            --danger: #ff4b4b;
+            --success: #00ff87;
+            --gold: #FFD700;
+            --silver: #C0C0C0;
+            --bronze: #CD7F32;
+        }
+        body {
+            margin: 0; padding: 0;
+            background-color: var(--bg-color); color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh; overflow-y: auto;
+        }
+        h1, h2, h3 { text-align: center; color: var(--accent-color); margin-bottom: 10px; }
+        
+        .round-indicator {
+            text-align: center; color: #aaaaaa; font-size: 1rem;
+            letter-spacing: 2px; margin-bottom: 5px; font-weight: bold;
+        }
+
+        /* 畫面切換與容器 */
+        .screen {
+            display: none; opacity: 0;
+            width: 95%; max-width: 1000px;
+            margin: 2rem auto; padding: 2rem;
+            background: var(--card-bg); border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.5);
+            transition: opacity 0.4s ease-in-out;
+        }
+        .screen.active {
+            display: block; opacity: 1;
+            animation: fadeIn 0.4s forwards;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* 輸入框與按鈕 */
+        input[type="number"], input[type="text"], select {
+            width: 100%; padding: 10px; margin: 10px 0;
+            background: #2a2a2a; color: white;
+            border: 1px solid #444; border-radius: 6px; font-size: 1.1rem; box-sizing: border-box;
+        }
+        input:focus, select:focus { outline: none; border-color: var(--accent-color); }
+        
+        button {
+            background: var(--accent-color); color: #000;
+            border: none; padding: 12px 24px; margin: 10px 5px;
+            font-size: 1.1rem; font-weight: bold; border-radius: 6px;
+            cursor: pointer; transition: all 0.3s;
+        }
+        button:hover:not(:disabled) { background: var(--btn-hover); color: white; transform: scale(1.05); }
+        button:disabled { background: var(--disabled); color: #888; cursor: not-allowed; }
+        
+        /* 瑞士輪賽程表 UI */
+        .match-row {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #2a2a2a; padding: 10px 15px; margin-bottom: 10px;
+            border-radius: 8px; border-left: 4px solid var(--accent-color);
+        }
+        .player-box { display: flex; align-items: center; gap: 10px; flex: 1; }
+        .player-box.right { justify-content: flex-end; }
+        .vs { font-weight: bold; color: #888; margin: 0 15px; }
+        .result-select { width: 80px; padding: 5px; margin: 0; }
+
+        /* 計時器 UI */
+        .timer-container {
+            text-align: center; background: #000; padding: 20px;
+            border-radius: 12px; margin-bottom: 20px; border: 2px solid #333;
+        }
+        .timer-display {
+            font-size: 6.5rem; line-height: 1;
+            font-weight: bold; font-family: monospace;
+            color: white; margin-bottom: 15px; transition: color 0.3s;
+        }
+        .timer-display.flash { color: var(--danger); animation: flashRed 1s infinite; }
+        @keyframes flashRed { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+        .timer-controls button { font-size: 0.9rem; padding: 8px 16px; margin: 0 5px; }
+        
+        /* ================= 雙淘汰 直式樹狀圖 UI (由下而上) ================= */
+        .de-bracket-container {
+            display: flex; flex-direction: column; gap: 40px; margin-top: 20px;
+        }
+        .bracket-section {
+            background: #151515; padding: 25px 15px; border-radius: 12px;
+            border: 1px solid #333; overflow-x: auto;
+        }
+        .bracket-section h3 { font-size: 1.4rem; border-bottom: 2px solid #333; padding-bottom: 10px; margin-top: 0; }
+
+        .vertical-tree {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 10px 0;
+        }
+        .tree-row { display: flex; justify-content: center; gap: 40px; }
+        
+        /* 比賽卡片 */
+        .ko-card { 
+            background: #222; border: 2px solid #444; border-radius: 8px; 
+            width: 220px; padding: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); 
+            z-index: 2; transition: all 0.3s ease; position: relative;
+        }
+        .ko-card.dummy {
+            background: transparent; border: 2px dashed #555; display: flex; 
+            align-items: center; justify-content: center; color: #777; font-weight: bold;
+        }
+        /* 當前正在進行的比賽發光變色 */
+        .ko-card.active-match { 
+            border-color: var(--accent-color); 
+            box-shadow: 0 0 15px rgba(0,210,255,0.4); 
+        }
+        .match-title { font-size: 0.85rem; color: #aaa; margin-bottom: 8px; font-weight: bold; text-align: center; }
+        
+        .ko-row-player { 
+            display: flex; justify-content: space-between; align-items: center; 
+            padding: 8px 0; border-bottom: 1px solid #3c3c3c; 
+        }
+        .ko-row-player:last-child { border-bottom: none; }
+        .ko-name { 
+            font-weight: 500; font-size: 1.05rem; white-space: nowrap; 
+            overflow: hidden; text-overflow: ellipsis; max-width: 120px; 
+        }
+        .ko-row-player.loser .ko-name { color: #666; text-decoration: line-through; }
+        .ko-select { 
+            width: 65px; padding: 4px; font-size: 0.9rem; 
+            background: #111; color: white; border: 1px solid #555; 
+            border-radius: 4px; margin: 0;
+        }
+
+        /* 樹狀圖粗連線 (8px 超醒目淺藍色) */
+        .fork-stem {
+            width: 8px; /* 醒目的粗度 */
+            height: 40px; /* 線條長度 */
+            background-color: var(--accent-color); 
+        }
+        .fork-branches {
+            display: flex;
+            /* 寬度 = 卡片寬(220) + 間距(40) + 邊框粗細(8) = 268px */
+            width: 268px; height: 40px;
+            border-top: 8px solid var(--accent-color);
+            border-left: 8px solid var(--accent-color);
+            border-right: 8px solid var(--accent-color);
+            box-sizing: border-box; border-radius: 8px 8px 0 0;
+        }
+        
+        /* 最終排行榜 (冠亞季軍) */
+        .rankings-box {
+            text-align: center; padding: 30px; background: #111;
+            border: 2px solid var(--success); border-radius: 12px;
+            box-shadow: 0 0 20px rgba(0, 255, 135, 0.2);
+            animation: fadeIn 1s forwards; width: 100%; box-sizing: border-box;
+            margin-top: 20px;
+        }
+        .rank-item { font-size: 1.6rem; font-weight: bold; margin: 15px 0; }
+        .rank-1 { color: var(--gold); font-size: 2.2rem; }
+        .rank-2 { color: var(--silver); }
+        .rank-3 { color: var(--bronze); }
+        /* ================================================= */
+    </style>
+</head>
+<body>
+
+    <div id="screen-1" class="screen active">
+        <h1>賽程管理系統</h1>
+        <h2>請輸入參賽總人數</h2>
+        <input type="number" id="player-count" min="2" placeholder="例如: 8" onkeypress="handleEnter(event, 'btn-screen-1')">
+        <div style="text-align: center;">
+            <button id="btn-screen-1" onclick="generateNameInputs()">確認 (Enter)</button>
+        </div>
+    </div>
+
+    <div id="screen-2" class="screen">
+        <h2>請輸入參賽者名單</h2>
+        <div id="name-inputs-container"></div>
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="btn-screen-2" onclick="startSwissTournament()">確認名單 (Enter)</button>
+        </div>
+    </div>
+
+    <div id="screen-3" class="screen">
+        <div id="round-indicator" class="round-indicator">目前場數: 1 / ?</div>
+        <h2 id="round-title">瑞士輪 - 第 1 場</h2>
+        
+        <div class="timer-container">
+            <div id="timer-display" class="timer-display">25:00</div>
+            <div class="timer-controls">
+                <button onclick="startTimer()">開始</button>
+                <button onclick="pauseTimer()">暫停</button>
+                <button onclick="resetTimer()">重置</button>
+                <button id="btn-add-time" onclick="addTime()" disabled>加時 (5分)</button>
+            </div>
+        </div>
+
+        <div id="swiss-bracket-container"></div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="btn-end-match" disabled onclick="endSwissRound()">比賽結束 (結算成績)</button>
+            <button id="btn-start-knockout" style="display: none;" onclick="startKnockoutPhase()">進入雙淘汰賽 (前4強)</button>
+        </div>
+    </div>
+
+    <div id="screen-4" class="screen">
+        <div id="ko-round-indicator" class="round-indicator">雙淘汰場數: 1 / 4</div>
+        <h2 id="knockout-title">四強雙淘汰賽 (一戰定生死)</h2>
+        
+        <div class="timer-container">
+            <div id="timer-display-ko" class="timer-display">25:00</div>
+            <div class="timer-controls">
+                <button onclick="startTimer('ko')">開始</button>
+                <button onclick="pauseTimer('ko')">暫停</button>
+                <button onclick="resetTimer('ko')">重置</button>
+                <button id="btn-add-time-ko" onclick="addTime('ko')" disabled>加時 (5分)</button>
+            </div>
+        </div>
+
+        <div id="knockout-tree-container"></div>
+        
+        <div style="text-align: center; margin-top: 20px;">
+            <button id="btn-next-ko-match" disabled onclick="nextKnockoutRound()">下一場 (確認結果)</button>
+        </div>
+    </div>
+
+    <script>
+        // === 全域變數 ===
+        let players = [];
+        let currentRound = 1;
+        let totalSwissRounds = 0;
+        
+        // 雙淘汰變數
+        let knockoutPlayers = [];
+        let deMatches = {};
+        let deCurrentRound = 1;
+        let finalRankings = []; // [0:冠軍, 1:亞軍, 2:季軍]
+        
+        let timerInterval = null;
+        let timeLeft = 25 * 60; 
+        let isRunning = false;
+        let activeTimerMode = 'swiss'; 
+
+        // === 畫面切換 ===
+        function switchScreen(hideId, showId) {
+            document.getElementById(hideId).classList.remove('active');
+            setTimeout(() => { document.getElementById(showId).classList.add('active'); }, 400);
+        }
+        function handleEnter(e, btnId) { if (e.key === 'Enter') document.getElementById(btnId).click(); }
+
+        // === 初始化 ===
+        function generateNameInputs() {
+            const count = parseInt(document.getElementById('player-count').value);
+            if (isNaN(count) || count < 2) { alert("請輸入有效的大於1的人數！"); return; }
+            
+            totalSwissRounds = Math.ceil(Math.log2(count)); 
+            const container = document.getElementById('name-inputs-container');
+            container.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                container.innerHTML += `
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span>${i}.</span>
+                        <input type="text" id="pname-${i}" placeholder="輸入第 ${i} 位選手名稱" onkeypress="if(event.key==='Enter'&&${i===count}) document.getElementById('btn-screen-2').click(); else if(event.key==='Enter') document.getElementById('pname-${i+1}').focus();">
+                    </div>
+                `;
+            }
+            switchScreen('screen-1', 'screen-2');
+            setTimeout(() => document.getElementById('pname-1').focus(), 450);
+        }
+
+        function startSwissTournament() {
+            const count = parseInt(document.getElementById('player-count').value);
+            players = [];
+            for (let i = 1; i <= count; i++) {
+                const name = document.getElementById(`pname-${i}`).value || `選手 ${i}`;
+                players.push({ id: i, name: name, score: 0 });
+            }
+            renderSwissRound();
+            switchScreen('screen-2', 'screen-3');
+        }
+
+        // === 瑞士輪邏輯 ===
+        function renderSwissRound() {
+            document.getElementById('round-indicator').innerText = `目前場數: ${currentRound} / ${totalSwissRounds}`;
+            document.getElementById('round-title').innerText = `瑞士輪 - 第 ${currentRound} 場`;
+            resetTimer('swiss'); 
+            
+            players.sort((a, b) => b.score - a.score);
+            const container = document.getElementById('swiss-bracket-container');
+            container.innerHTML = '';
+            
+            for (let i = 0; i < players.length; i += 2) {
+                if (i + 1 < players.length) {
+                    let p1 = players[i];
+                    let p2 = players[i+1];
+                    container.innerHTML += `
+                        <div class="match-row">
+                            <div class="player-box">
+                                <span>${p1.name} (${p1.score}分)</span>
+                                <select class="result-select p1-select" data-id="${p1.id}" onchange="syncSwissSelect(this, 'left'); checkSwissMatchesDone();">
+                                    <option value="" selected disabled>-</option><option value="win">贏</option><option value="loss">輸</option><option value="draw">平局</option>
+                                </select>
+                            </div>
+                            <div class="vs">VS</div>
+                            <div class="player-box right">
+                                <select class="result-select p2-select" data-id="${p2.id}" onchange="syncSwissSelect(this, 'right'); checkSwissMatchesDone();">
+                                    <option value="" selected disabled>-</option><option value="win">贏</option><option value="loss">輸</option><option value="draw">平局</option>
+                                </select>
+                                <span>${p2.name} (${p2.score}分)</span>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML += `
+                        <div class="match-row" style="border-color: var(--disabled);">
+                            <span>${players[i].name} (${players[i].score}分) - 本輪輪空 (自動得3分)</span>
+                            <input type="hidden" class="result-select bye" data-id="${players[i].id}" value="win">
+                        </div>
+                    `;
+                }
+            }
+            document.getElementById('btn-end-match').disabled = true;
+        }
+
+        function syncSwissSelect(element, side) {
+            const row = element.closest('.match-row');
+            const leftSelect = row.querySelector('.p1-select');
+            const rightSelect = row.querySelector('.p2-select');
+            if (!leftSelect || !rightSelect) return;
+            if (side === 'left') {
+                if (element.value === 'win') rightSelect.value = 'loss';
+                else if (element.value === 'loss') rightSelect.value = 'win';
+                else if (element.value === 'draw') rightSelect.value = 'draw';
+            } else {
+                if (element.value === 'win') leftSelect.value = 'loss';
+                else if (element.value === 'loss') leftSelect.value = 'win';
+                else if (element.value === 'draw') leftSelect.value = 'draw';
+            }
+        }
+
+        function checkSwissMatchesDone() {
+            const selects = document.querySelectorAll('#swiss-bracket-container .result-select');
+            let allDone = true;
+            selects.forEach(s => { if (s.value === "") allDone = false; });
+            document.getElementById('btn-end-match').disabled = !allDone;
+        }
+
+        function endSwissRound() {
+            const container = document.getElementById('swiss-bracket-container');
+            const allSelects = container.querySelectorAll('.p1-select, .p2-select');
+            const byes = container.querySelectorAll('input.bye');
+
+            allSelects.forEach(sel => {
+                let p = players.find(x => x.id == sel.getAttribute('data-id'));
+                if (p) {
+                    if (sel.value === 'win') p.score += 3;
+                    else if (sel.value === 'draw') p.score += 1;
+                }
+            });
+            byes.forEach(sel => {
+                let p = players.find(x => x.id == sel.getAttribute('data-id'));
+                if (p) p.score += 3;
+            });
+
+            currentRound++;
+            if (currentRound > totalSwissRounds) {
+                document.getElementById('round-indicator').innerText = `瑞士輪已結束`;
+                document.getElementById('swiss-bracket-container').innerHTML = `<h3 style="color:var(--success)">瑞士輪全部結束！分數已結算完成。</h3>`;
+                document.getElementById('btn-end-match').style.display = 'none';
+                document.getElementById('btn-start-knockout').style.display = 'inline-block';
+            } else {
+                renderSwissRound();
+            }
+        }
+
+        // === 畫面 3 -> 畫面 4 (前四強 雙淘汰 - 一戰定生死) ===
+        function startKnockoutPhase() {
+            activeTimerMode = 'ko';
+            players.sort((a, b) => b.score - a.score);
+            
+            let topCount = Math.min(4, players.length);
+            knockoutPlayers = players.slice(0, topCount);
+            
+            while(knockoutPlayers.length < 4) {
+                knockoutPlayers.push({ id: 'bye-' + knockoutPlayers.length, name: '輪空 (Bye)', score: 0, isBye: true });
+            }
+
+            // 初始化雙淘汰結構 (移除 gf2)
+            deMatches = {
+                w1: { id: 'w1', title: '勝部首輪 (Seed 1 v 4)', p1: knockoutPlayers[0], p2: knockoutPlayers[3], winner: null, loser: null },
+                w2: { id: 'w2', title: '勝部首輪 (Seed 2 v 3)', p1: knockoutPlayers[1], p2: knockoutPlayers[2], winner: null, loser: null },
+                w3: { id: 'w3', title: '勝部決賽', p1: null, p2: null, winner: null, loser: null },
+                l1: { id: 'l1', title: '敗部首輪', p1: null, p2: null, winner: null, loser: null },
+                l2: { id: 'l2', title: '敗部決賽 (爭奪季軍)', p1: null, p2: null, winner: null, loser: null },
+                gf1: { id: 'gf1', title: '總決賽 (一戰定生死)', p1: null, p2: null, winner: null, loser: null }
+            };
+
+            deCurrentRound = 1;
+            seedRoundMatches();
+            renderKnockoutTree();
+            resetTimer('ko');
+            switchScreen('screen-3', 'screen-4');
+        }
+
+        function getMatchesForRound(round) {
+            if (round === 1) return ['w1', 'w2'];
+            if (round === 2) return ['w3', 'l1'];
+            if (round === 3) return ['l2'];
+            if (round === 4) return ['gf1'];
+            return []; // 移除第五輪
+        }
+
+        function seedRoundMatches() {
+            let activeKeys = getMatchesForRound(deCurrentRound);
+            activeKeys.forEach(mk => {
+                let m = deMatches[mk];
+                if (m.p1 && m.p2 && m.winner === null) {
+                    if (m.p1.isBye && m.p2.isBye) { m.winner = m.p1; m.loser = m.p2; }
+                    else if (m.p1.isBye) { m.winner = m.p2; m.loser = m.p1; }
+                    else if (m.p2.isBye) { m.winner = m.p1; m.loser = m.p2; }
+                }
+            });
+        }
+
+        // 生成卡片內的選手 HTML
+        function getPlayerRowHTML(match, playerKey, isCurrentRound) {
+            let p = match[playerKey];
+            if (!p) return `<div class="ko-row-player"><span class="ko-name" style="color:#555">待定 (TBD)</span></div>`;
+
+            let resultSelect = '';
+            if (isCurrentRound && !p.isBye && match.winner === null) {
+                resultSelect = `
+                    <select class="ko-select" data-match="${match.id}" data-side="${playerKey}" onchange="syncKoSelect(this); checkKoMatchesDone();">
+                        <option value="" disabled selected>-</option>
+                        <option value="win">贏</option><option value="loss">輸</option><option value="draw">平</option>
+                    </select>
+                `;
+            } else if (match.winner) {
+                if (match.winner.id === p.id) {
+                    resultSelect = `<span style="color:var(--success); font-size: 0.9rem; font-weight: bold;">勝</span>`;
+                } else {
+                    resultSelect = `<span style="color:var(--danger); font-size: 0.9rem;">敗</span>`;
+                }
+            } else if (p.isBye) {
+                resultSelect = `<span style="color:var(--disabled); font-size: 0.9rem;">- (輪空)</span>`;
+            }
+
+            return `
+                <div class="ko-row-player ${match.winner && match.winner.id !== p.id ? 'loser' : ''}">
+                    <span class="ko-name" title="${p.name}">${p.name}</span>
+                    ${resultSelect}
+                </div>
+            `;
+        }
+
+        // 生成整張比賽卡片 HTML
+        function getKoCard(matchKey) {
+            let m = deMatches[matchKey];
+            if (!m) return '';
+            let isCurrentRound = getMatchesForRound(deCurrentRound).includes(matchKey);
+            let activeClass = isCurrentRound && m.winner === null ? 'active-match' : '';
+
+            return `
+                <div class="ko-card ${activeClass}" id="${m.id}">
+                    <div class="match-title">${m.title}</div>
+                    ${getPlayerRowHTML(m, 'p1', isCurrentRound)}
+                    ${getPlayerRowHTML(m, 'p2', isCurrentRound)}
+                </div>
+            `;
+        }
+
+        // 渲染直式樹狀圖 (分三區塊)
+        function renderKnockoutTree() {
+            if (deCurrentRound < 99) {
+                document.getElementById('ko-round-indicator').innerText = `雙淘汰場數: ${deCurrentRound} / 4`;
+                document.getElementById('btn-next-ko-match').style.display = 'inline-block';
+            } else {
+                document.getElementById('ko-round-indicator').innerText = `比賽完全結束`;
+                document.getElementById('btn-next-ko-match').style.display = 'none';
+            }
+
+            const container = document.getElementById('knockout-tree-container');
+            
+            let html = `<div class="de-bracket-container">`;
+
+            // 【第一區：勝部賽程樹狀圖】
+            html += `
+            <div class="bracket-section" style="border-color: var(--accent-color);">
+                <h3 style="color: var(--accent-color);">🟦 勝部賽程 (Winners Bracket)</h3>
+                <div class="vertical-tree">
+                    <div class="tree-row">${getKoCard('w3')}</div>
+                    <div class="fork-stem"></div>
+                    <div class="fork-branches"></div>
+                    <div class="tree-row" style="gap: 40px;">
+                        ${getKoCard('w1')}
+                        ${getKoCard('w2')}
+                    </div>
+                </div>
+            </div>`;
+
+            // 【第二區：敗部賽程樹狀圖】
+            html += `
+            <div class="bracket-section" style="border-color: var(--danger);">
+                <h3 style="color: var(--danger);">🟥 敗部賽程 (Losers Bracket)</h3>
+                <div class="vertical-tree">
+                    <div class="tree-row">${getKoCard('l2')}</div>
+                    <div class="fork-stem"></div>
+                    <div class="fork-branches"></div>
+                    <div class="tree-row" style="gap: 40px;">
+                        <div class="ko-card dummy">勝部決賽敗者<br>(等待降級)</div>
+                        ${getKoCard('l1')}
+                    </div>
+                </div>
+            </div>`;
+
+            // 【第三區：總決賽 (移除 Reset)】
+            html += `
+            <div class="bracket-section" style="border-color: var(--gold);">
+                <h3 style="color: var(--gold);">🟨 總決賽 (Grand Finals)</h3>
+                <div class="vertical-tree">
+                    <div class="tree-row">${getKoCard('gf1')}</div>
+                </div>
+            </div>`;
+
+            html += `</div>`; // End de-bracket-container
+
+            // 若比賽結束，在下方呈現冠亞季軍排行榜
+            if (deCurrentRound === 99) {
+                html += `
+                <div class="rankings-box">
+                    <h2 style="color: var(--success); font-size: 2.5rem; margin-top:0;">🏆 最終賽事成績 🏆</h2>
+                    <div class="rank-item rank-1">🥇 冠軍: ${finalRankings[0].name}</div>
+                    <div class="rank-item rank-2">🥈 亞軍: ${finalRankings[1].name}</div>
+                    <div class="rank-item rank-3">🥉 季軍: ${finalRankings[2].name}</div>
+                </div>
+                `;
+            }
+
+            container.innerHTML = html;
+            checkKoMatchesDone(); 
+        }
+
+        function syncKoSelect(element) {
+            const card = element.closest('.ko-card');
+            const side = element.getAttribute('data-side');
+            const oppSide = side === 'p1' ? 'p2' : 'p1';
+            const oppSelect = card.querySelector(`.ko-select[data-side="${oppSide}"]`);
+            if (!oppSelect) return;
+
+            if (element.value === 'win') oppSelect.value = 'loss';
+            else if (element.value === 'loss') oppSelect.value = 'win';
+            else if (element.value === 'draw') oppSelect.value = 'draw';
+        }
+
+        function checkKoMatchesDone() {
+            if (deCurrentRound === 99) return;
+            let activeKeys = getMatchesForRound(deCurrentRound);
+            let allDone = true;
+            
+            activeKeys.forEach(mk => {
+                let m = deMatches[mk];
+                if (m.winner !== null) return; 
+                const card = document.getElementById(m.id);
+                if(card) {
+                    const selects = card.querySelectorAll('select');
+                    if(selects.length > 0) {
+                        selects.forEach(s => { if(s.value === '') allDone = false; });
+                    }
+                }
+            });
+            document.getElementById('btn-next-ko-match').disabled = !allDone;
+        }
+
+        // 確認結果，推進樹狀圖到下一場
+        function nextKnockoutRound() {
+            let activeKeys = getMatchesForRound(deCurrentRound);
+            let hasDraw = false;
+            
+            // 1. 偵測平局 (強制重賽機制)
+            activeKeys.forEach(mk => {
+                let m = deMatches[mk];
+                if (m.winner !== null) return; 
+                const card = document.getElementById(m.id);
+                if(card) {
+                    const p1Select = card.querySelector('.ko-select[data-side="p1"]');
+                    if (p1Select && p1Select.value === 'draw') hasDraw = true;
+                }
+            });
+
+            if (hasDraw) {
+                alert("⚠️ 發現平局！淘汰賽階段不允許平局。\n\n請雙方針對平局的賽事「再加賽一場」以分出勝負！系統已自動為您重置平局的選項。");
+                activeKeys.forEach(mk => {
+                    let m = deMatches[mk];
+                    const card = document.getElementById(m.id);
+                    if(card) {
+                        const selects = card.querySelectorAll('.ko-select');
+                        if (selects[0] && selects[0].value === 'draw') {
+                            selects.forEach(s => s.value = ''); 
+                        }
+                    }
+                });
+                checkKoMatchesDone();
+                return; // 終止推進
+            }
+
+            // 2. 寫入勝負結果
+            activeKeys.forEach(mk => {
+                let m = deMatches[mk];
+                if (m.winner !== null) return; 
+                const card = document.getElementById(m.id);
+                if(card) {
+                    const p1Select = card.querySelector('.ko-select[data-side="p1"]');
+                    if (p1Select) {
+                        if (p1Select.value === 'win') { m.winner = m.p1; m.loser = m.p2; }
+                        else { m.winner = m.p2; m.loser = m.p1; }
+                    }
+                }
+            });
+
+            // 3. 雙淘汰樹狀推進邏輯 (一戰定生死版)
+            if (deCurrentRound === 1) {
+                deMatches.w3.p1 = deMatches.w1.winner;
+                deMatches.w3.p2 = deMatches.w2.winner;
+                deMatches.l1.p1 = deMatches.w1.loser;
+                deMatches.l1.p2 = deMatches.w2.loser;
+                deCurrentRound = 2;
+                resetTimer('ko');
+            } else if (deCurrentRound === 2) {
+                deMatches.gf1.p1 = deMatches.w3.winner;
+                deMatches.l2.p1 = deMatches.w3.loser; // 勝部決賽敗者掉入敗部
+                deMatches.l2.p2 = deMatches.l1.winner; // 敗部首輪勝者挺進
+                deCurrentRound = 3;
+                resetTimer('ko');
+            } else if (deCurrentRound === 3) {
+                deMatches.gf1.p2 = deMatches.l2.winner; // 敗部冠軍出爐
+                finalRankings[2] = deMatches.l2.loser;  // l2敗者確定為【季軍】
+                deCurrentRound = 4;
+                resetTimer('ko');
+            } else if (deCurrentRound === 4) {
+                // 第四輪打完，直接結算冠亞軍，無視誰是勝部/敗部
+                finalRankings[0] = deMatches.gf1.winner; // 冠軍
+                finalRankings[1] = deMatches.gf1.loser;  // 亞軍
+                deCurrentRound = 99; 
+                pauseTimer('ko');
+            }
+
+            seedRoundMatches(); // 自動結算新一輪可能出現的輪空
+            renderKnockoutTree();
+        }
+
+        // === 計時器邏輯 ===
+        function updateDisplay(mode = activeTimerMode) {
+            const displayId = mode === 'swiss' ? 'timer-display' : 'timer-display-ko';
+            const btnId = mode === 'swiss' ? 'btn-add-time' : 'btn-add-time-ko';
+            const display = document.getElementById(displayId);
+            const addTimeBtn = document.getElementById(btnId);
+
+            let m = Math.floor(timeLeft / 60);
+            let s = timeLeft % 60;
+            display.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+
+            if (timeLeft === 0) {
+                display.classList.add('flash');
+                addTimeBtn.disabled = false;
+            } else {
+                display.classList.remove('flash');
+                addTimeBtn.disabled = true;
+            }
+        }
+
+        function startTimer(mode = activeTimerMode) {
+            if (isRunning || timeLeft === 0) return;
+            isRunning = true;
+            timerInterval = setInterval(() => {
+                if (timeLeft > 0) { timeLeft--; updateDisplay(mode); }
+                if (timeLeft === 0) {
+                    clearInterval(timerInterval);
+                    isRunning = false;
+                    updateDisplay(mode); 
+                }
+            }, 1000);
+        }
+
+        function pauseTimer(mode = activeTimerMode) {
+            clearInterval(timerInterval);
+            isRunning = false;
+        }
+
+        function resetTimer(mode = activeTimerMode) {
+            pauseTimer(mode);
+            timeLeft = 25 * 60; 
+            updateDisplay(mode);
+        }
+
+        function addTime(mode = activeTimerMode) {
+            if (timeLeft !== 0) return; 
+            pauseTimer(mode);
+            timeLeft = 5 * 60; 
+            updateDisplay(mode);
+        }
+    </script>
+</body>
+</html>
