@@ -990,6 +990,13 @@
             }, 450);
         }
 
+        function shufflePlayers(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
         function startSwissTournament() {
             const count = parseInt(document.getElementById('player-count').value);
             players = [];
@@ -999,6 +1006,8 @@
                 const deck = deckEl ? deckEl.value.trim() : '';
                 players.push({ id: i, name: name, deck: deck, score: 0 });
             }
+            // 第一輪瑞士輪以亂數隨機配對
+            shufflePlayers(players);
             currentRound = 1;
             activeTimerMode = 'swiss';
             renderSwissRound();
@@ -1022,9 +1031,10 @@
 
             if (!skipTimerReset) {
                 resetTimer('swiss');
+                if (currentRound > 1) {
+                    players.sort((a, b) => b.score - a.score);
+                }
             }
-            
-            players.sort((a, b) => b.score - a.score);
             const container = document.getElementById('swiss-bracket-container');
             container.innerHTML = '';
             
