@@ -419,7 +419,7 @@
             box-sizing: border-box; border-radius: 8px 8px 0 0;
         }
         
-        /* 最終排行榜 (冠亞季軍) */
+        /* 最終排行榜 (冠軍、亞軍、四強、八強) */
         .rankings-box {
             text-align: center; padding: 30px; background: #111;
             border: 2px solid var(--success); border-radius: 12px;
@@ -427,10 +427,11 @@
             animation: fadeIn 1s forwards; width: 100%; box-sizing: border-box;
             margin-top: 20px;
         }
-        .rank-item { font-size: 1.6rem; font-weight: bold; margin: 15px 0; }
+        .rank-item { font-size: 1.6rem; font-weight: bold; margin: 15px 0; line-height: 1.6; }
         .rank-1 { color: var(--gold); font-size: 2.2rem; }
         .rank-2 { color: var(--silver); }
-        .rank-3 { color: var(--bronze); }
+        .rank-3 { color: var(--bronze); font-size: 1.5rem; }
+        .rank-4 { color: var(--accent-color); font-size: 1.35rem; }
         /* ================================================= */
     </style>
 </head>
@@ -1311,14 +1312,31 @@
 
             html += `</div>`; // End de-bracket-container
 
-            // 若比賽結束，在下方呈現冠亞季軍排行榜
+            // 若比賽結束，在下方呈現冠軍、亞軍、四強（及超過8人時顯示八強）排行榜
             if (deCurrentRound === 99) {
+                const top4Third = finalRankings[2];
+                const top4Fourth = finalRankings[3] || (
+                    (deMatches.l1 && !deMatches.l1.isDoubleLoss && deMatches.l1.loser && !deMatches.l1.loser.isBye)
+                        ? deMatches.l1.loser
+                        : { name: '從缺', isVacant: true }
+                );
+                const top4HTML = `${formatRankingPlayerHTML(top4Third)} 、 ${formatRankingPlayerHTML(top4Fourth)}`;
+
+                let top8RowHTML = '';
+                if (players.length > 8) {
+                    const sortedBySwiss = [...players].sort((a, b) => b.score - a.score);
+                    const top8Players = sortedBySwiss.slice(4, 8);
+                    const top8HTML = top8Players.map(p => `${formatRankingPlayerHTML(p)} <span style="font-size:0.85em; color:#aaa;">(${p.score}分)</span>`).join(' 、 ');
+                    top8RowHTML = `<div class="rank-item rank-4">🎖️ 八強: ${top8HTML}</div>`;
+                }
+
                 html += `
                 <div class="rankings-box">
                     <h2 style="color: var(--success); font-size: 2.5rem; margin-top:0;">🏆 最終賽事成績 🏆</h2>
                     <div class="rank-item rank-1">🥇 冠軍: ${formatRankingPlayerHTML(finalRankings[0])}</div>
                     <div class="rank-item rank-2">🥈 亞軍: ${formatRankingPlayerHTML(finalRankings[1])}</div>
-                    <div class="rank-item rank-3">🥉 季軍: ${formatRankingPlayerHTML(finalRankings[2])}</div>
+                    <div class="rank-item rank-3">🏅 四強: ${top4HTML}</div>
+                    ${top8RowHTML}
                 </div>
                 `;
             }
@@ -1482,13 +1500,16 @@
                 deMatches.gf1.p1 = deMatches.w3.winner;
                 deMatches.l2.p1 = deMatches.w3.loser; // 勝部決賽敗者掉入敗部
                 deMatches.l2.p2 = deMatches.l1.winner; // 敗部首輪勝者挺進
+                finalRankings[3] = (deMatches.l1.isDoubleLoss || !deMatches.l1.loser || deMatches.l1.loser.isBye)
+                    ? { name: '從缺', isVacant: true }
+                    : deMatches.l1.loser; // l1敗者確定為【四強 (第4名)】(若雙敗則從缺)
                 deCurrentRound = 3;
                 resetTimer('ko');
             } else if (deCurrentRound === 3) {
                 deMatches.gf1.p2 = deMatches.l2.winner; // 敗部冠軍出爐
                 finalRankings[2] = (deMatches.l2.isDoubleLoss || !deMatches.l2.loser || deMatches.l2.loser.isBye)
                     ? { name: '從缺', isVacant: true }
-                    : deMatches.l2.loser;  // l2敗者確定為【季軍】(若雙敗則從缺)
+                    : deMatches.l2.loser;  // l2敗者確定為【四強 (第3名)】(若雙敗則從缺)
                 deCurrentRound = 4;
                 resetTimer('ko');
             } else if (deCurrentRound === 4) {
