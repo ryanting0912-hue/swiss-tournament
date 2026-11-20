@@ -33,6 +33,209 @@
             letter-spacing: 2px; margin-bottom: 5px; font-weight: bold;
         }
 
+        /* ================= 左側可彈出/收起 歷史紀錄側邊欄 ================= */
+        .history-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 320px;
+            height: 100vh;
+            background: #181818;
+            border-right: 2px solid #333;
+            box-shadow: 6px 0 24px rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-sizing: border-box;
+        }
+        .history-sidebar.collapsed {
+            transform: translateX(-320px);
+        }
+        .sidebar-toggle-btn {
+            position: absolute;
+            top: 20px;
+            right: -46px;
+            width: 46px;
+            height: 110px;
+            background: #1e1e1e;
+            color: var(--accent-color);
+            border: 2px solid var(--accent-color);
+            border-left: none;
+            border-radius: 0 10px 10px 0;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 8px 4px;
+            margin: 0;
+            font-size: 0.9rem;
+            font-weight: bold;
+            writing-mode: vertical-rl;
+            text-orientation: upright;
+            letter-spacing: 2px;
+            box-shadow: 4px 2px 12px rgba(0, 0, 0, 0.5);
+            transition: background 0.2s, color 0.2s;
+        }
+        .sidebar-toggle-btn:hover:not(:disabled) {
+            background: var(--accent-color);
+            color: #000;
+            transform: none;
+        }
+        .sidebar-header {
+            padding: 18px 16px 14px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #141414;
+        }
+        .sidebar-header h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--accent-color);
+            text-align: left;
+        }
+        .sidebar-collapse-inner-btn {
+            background: transparent;
+            color: #aaa;
+            border: 1px solid #444;
+            padding: 4px 10px;
+            margin: 0;
+            font-size: 0.85rem;
+            border-radius: 4px;
+        }
+        .sidebar-collapse-inner-btn:hover:not(:disabled) {
+            background: #333;
+            color: #fff;
+            transform: none;
+        }
+        .sidebar-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .history-empty {
+            color: #777;
+            text-align: center;
+            margin-top: 40px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .history-item {
+            background: #242424;
+            border: 1px solid #3a3a3a;
+            border-left: 4px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 12px;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .history-item.current-active {
+            border-color: var(--success);
+            border-left-color: var(--success);
+            background: #1f2a24;
+        }
+        .history-item-title {
+            font-weight: bold;
+            font-size: 1.05rem;
+            color: #fff;
+            margin-bottom: 6px;
+            word-break: break-all;
+            cursor: pointer;
+        }
+        .history-item-title:hover {
+            color: var(--accent-color);
+        }
+        .history-item-meta {
+            font-size: 0.83rem;
+            color: #bbb;
+            margin-bottom: 4px;
+        }
+        .history-item-time {
+            font-size: 0.75rem;
+            color: #777;
+            margin-bottom: 10px;
+        }
+        .history-item-actions {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+        .history-btn {
+            flex: 1;
+            padding: 6px 8px;
+            margin: 0;
+            font-size: 0.82rem;
+            border-radius: 5px;
+            text-align: center;
+            white-space: nowrap;
+        }
+        .history-btn:hover:not(:disabled) {
+            transform: translateY(-1px);
+        }
+        .history-btn.resume-btn {
+            background: var(--accent-color);
+            color: #000;
+        }
+        .history-btn.rename-btn {
+            background: #3a3a3a;
+            color: #fff;
+            border: 1px solid #555;
+        }
+        .history-btn.rename-btn:hover:not(:disabled) {
+            background: #505050;
+        }
+        .history-btn.delete-btn {
+            background: rgba(255, 75, 75, 0.15);
+            color: var(--danger);
+            border: 1px solid var(--danger);
+        }
+        .history-btn.delete-btn:hover:not(:disabled) {
+            background: var(--danger);
+            color: #fff;
+        }
+        .rename-box {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            margin-bottom: 8px;
+        }
+        .rename-box input[type="text"] {
+            margin: 0;
+            padding: 6px 8px;
+            font-size: 0.95rem;
+            background: #141414;
+            border: 1px solid var(--accent-color);
+        }
+        .rename-box-btns {
+            display: flex;
+            gap: 6px;
+        }
+        .top-nav-bar {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 5px;
+        }
+        .btn-back-home {
+            background: #2c2c2c;
+            color: #ddd;
+            border: 1px solid #555;
+            padding: 6px 14px;
+            margin: 0;
+            font-size: 0.9rem;
+            border-radius: 6px;
+        }
+        .btn-back-home:hover:not(:disabled) {
+            background: #444;
+            color: #fff;
+            transform: none;
+        }
+
         /* 畫面切換與容器 */
         .screen {
             display: none; opacity: 0;
@@ -41,6 +244,7 @@
             background: var(--card-bg); border-radius: 12px;
             box-shadow: 0 8px 20px rgba(0,0,0,0.5);
             transition: opacity 0.4s ease-in-out;
+            box-sizing: border-box;
         }
         .screen.active {
             display: block; opacity: 1;
@@ -172,6 +376,18 @@
 </head>
 <body>
 
+    <!-- 左側可彈出、收起的歷史紀錄欄位 -->
+    <aside id="history-sidebar" class="history-sidebar">
+        <button id="sidebar-toggle-btn" class="sidebar-toggle-btn" onclick="toggleHistorySidebar()" title="展開/收起歷史紀錄">
+            歷史紀錄
+        </button>
+        <div class="sidebar-header">
+            <h3>📋 賽事歷史紀錄</h3>
+            <button class="sidebar-collapse-inner-btn" onclick="toggleHistorySidebar()">◀ 收起</button>
+        </div>
+        <div id="history-list" class="sidebar-list"></div>
+    </aside>
+
     <div id="screen-1" class="screen active">
         <h1>賽程管理系統</h1>
         <h2>請輸入參賽總人數</h2>
@@ -182,6 +398,9 @@
     </div>
 
     <div id="screen-2" class="screen">
+        <div class="top-nav-bar">
+            <button class="btn-back-home" onclick="returnToHome()">🏠 返回首頁</button>
+        </div>
         <h2>請輸入參賽者名單</h2>
         <div id="name-inputs-container"></div>
         <div style="text-align: center; margin-top: 20px;">
@@ -190,6 +409,9 @@
     </div>
 
     <div id="screen-3" class="screen">
+        <div class="top-nav-bar">
+            <button class="btn-back-home" onclick="returnToHome()">🏠 返回首頁</button>
+        </div>
         <div id="round-indicator" class="round-indicator">目前場數: 1 / ?</div>
         <h2 id="round-title">瑞士輪 - 第 1 場</h2>
         
@@ -212,6 +434,9 @@
     </div>
 
     <div id="screen-4" class="screen">
+        <div class="top-nav-bar">
+            <button class="btn-back-home" onclick="returnToHome()">🏠 返回首頁</button>
+        </div>
         <div id="ko-round-indicator" class="round-indicator">雙淘汰場數: 1 / 4</div>
         <h2 id="knockout-title">四強雙淘汰賽 (一戰定生死)</h2>
         
@@ -234,6 +459,12 @@
 
     <script>
         // === 全域變數 ===
+        const STORAGE_KEY = 'swiss_tournament_history_v1';
+        let currentTournamentId = null;
+        let currentScreenId = 'screen-1';
+        let renamingRecordId = null;
+        let deletingRecordId = null;
+
         let players = [];
         let currentRound = 1;
         let totalSwissRounds = 0;
@@ -249,49 +480,452 @@
         let isRunning = false;
         let activeTimerMode = 'swiss'; 
 
+        // === 歷史紀錄與 LocalStorage 管理 ===
+        function loadHistoryList() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                return raw ? JSON.parse(raw) : [];
+            } catch (e) {
+                console.error('讀取歷史紀錄失敗:', e);
+                return [];
+            }
+        }
+
+        function saveHistoryList(list) {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+            } catch (e) {
+                console.error('儲存歷史紀錄失敗:', e);
+            }
+        }
+
+        function formatTimestamp(ts) {
+            const d = new Date(ts);
+            const pad = n => n.toString().padStart(2, '0');
+            return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+        }
+
+        function getCurrentSwissSelections() {
+            const selections = {};
+            const selects = document.querySelectorAll('#swiss-bracket-container .p1-select, #swiss-bracket-container .p2-select');
+            selects.forEach(s => {
+                const pid = s.getAttribute('data-id');
+                if (pid) selections[pid] = s.value;
+            });
+            return selections;
+        }
+
+        function getCurrentKoSelections() {
+            const selections = {};
+            const selects = document.querySelectorAll('#knockout-tree-container .ko-select');
+            selects.forEach(s => {
+                const mId = s.getAttribute('data-match');
+                const side = s.getAttribute('data-side');
+                if (mId && side) selections[`${mId}_${side}`] = s.value;
+            });
+            return selections;
+        }
+
+        function getDraftNamesFromInputs(count) {
+            const names = [];
+            for (let i = 1; i <= count; i++) {
+                const el = document.getElementById(`pname-${i}`);
+                names.push(el ? el.value : '');
+            }
+            return names;
+        }
+
+        function createNewTournamentRecord(playerCount) {
+            const list = loadHistoryList();
+            const now = Date.now();
+            const id = 'tour-' + now + '-' + Math.random().toString(36).slice(2, 6);
+            const defaultTitle = `賽事 ${formatTimestamp(now)}`;
+            const newRecord = {
+                id: id,
+                title: defaultTitle,
+                createdAt: now,
+                updatedAt: now,
+                currentScreen: 'screen-2',
+                playerCount: playerCount,
+                draftNames: Array(playerCount).fill(''),
+                players: [],
+                currentRound: 1,
+                totalSwissRounds: totalSwissRounds,
+                swissSelections: {},
+                knockoutPlayers: [],
+                deMatches: {},
+                deCurrentRound: 1,
+                koSelections: {},
+                finalRankings: [],
+                timeLeft: 3,
+                activeTimerMode: 'swiss'
+            };
+            list.unshift(newRecord);
+            saveHistoryList(list);
+            currentTournamentId = id;
+            renderHistorySidebar();
+            return id;
+        }
+
+        function saveCurrentTournamentState() {
+            if (!currentTournamentId) return;
+            const list = loadHistoryList();
+            const idx = list.findIndex(item => item.id === currentTournamentId);
+            if (idx === -1) return;
+
+            const rec = list[idx];
+            rec.updatedAt = Date.now();
+            rec.currentScreen = currentScreenId;
+            rec.players = JSON.parse(JSON.stringify(players));
+            rec.currentRound = currentRound;
+            rec.totalSwissRounds = totalSwissRounds;
+            rec.knockoutPlayers = JSON.parse(JSON.stringify(knockoutPlayers));
+            rec.deMatches = JSON.parse(JSON.stringify(deMatches));
+            rec.deCurrentRound = deCurrentRound;
+            rec.finalRankings = JSON.parse(JSON.stringify(finalRankings));
+            rec.timeLeft = timeLeft;
+            rec.activeTimerMode = activeTimerMode;
+
+            if (currentScreenId === 'screen-2') {
+                rec.draftNames = getDraftNamesFromInputs(rec.playerCount);
+            } else if (currentScreenId === 'screen-3') {
+                rec.swissSelections = getCurrentSwissSelections();
+            } else if (currentScreenId === 'screen-4') {
+                rec.koSelections = getCurrentKoSelections();
+            }
+
+            saveHistoryList(list);
+            renderHistorySidebar();
+        }
+
+        function getRecordStatusText(rec) {
+            const pCount = rec.playerCount || (rec.players ? rec.players.length : 0);
+            if (rec.currentScreen === 'screen-2') {
+                return `📝 名單輸入中 (${pCount}人)`;
+            }
+            if (rec.currentScreen === 'screen-3') {
+                if (rec.currentRound > rec.totalSwissRounds) {
+                    return `✅ 瑞士輪結束・待進四強 (${pCount}人)`;
+                }
+                return `⚔️ 瑞士輪 第 ${rec.currentRound} / ${rec.totalSwissRounds} 場 (${pCount}人)`;
+            }
+            if (rec.currentScreen === 'screen-4') {
+                if (rec.deCurrentRound === 99 && rec.finalRankings && rec.finalRankings[0]) {
+                    return `🏆 已完賽 (冠軍: ${rec.finalRankings[0].name})`;
+                }
+                return `🔥 雙淘汰賽 第 ${rec.deCurrentRound} / 4 場 (${pCount}人)`;
+            }
+            return `進行中 (${pCount}人)`;
+        }
+
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function toggleHistorySidebar(forceState) {
+            const sidebar = document.getElementById('history-sidebar');
+            if (typeof forceState === 'boolean') {
+                sidebar.classList.toggle('collapsed', !forceState);
+            } else {
+                sidebar.classList.toggle('collapsed');
+            }
+        }
+
+        function renderHistorySidebar() {
+            const container = document.getElementById('history-list');
+            const list = loadHistoryList();
+
+            if (list.length === 0) {
+                container.innerHTML = `<div class="history-empty">尚無賽事紀錄。<br>輸入人數開始新比賽後，<br>系統將自動於此處保存進度！</div>`;
+                return;
+            }
+
+            let html = '';
+            list.forEach(rec => {
+                const isActive = rec.id === currentTournamentId && currentScreenId !== 'screen-1';
+                const statusText = getRecordStatusText(rec);
+                const updatedStr = formatTimestamp(rec.updatedAt || rec.createdAt);
+
+                html += `<div class="history-item ${isActive ? 'current-active' : ''}">`;
+
+                if (renamingRecordId === rec.id) {
+                    html += `
+                        <div class="rename-box">
+                            <input type="text" id="rename-input-${rec.id}" value="${escapeHtml(rec.title)}"
+                                onkeydown="if(event.key==='Enter') confirmRenameRecord('${rec.id}'); else if(event.key==='Escape') cancelRenameRecord();">
+                            <div class="rename-box-btns">
+                                <button class="history-btn resume-btn" onclick="confirmRenameRecord('${rec.id}')">儲存</button>
+                                <button class="history-btn rename-btn" onclick="cancelRenameRecord()">取消</button>
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="history-item-title" onclick="resumeTournament('${rec.id}')" title="點擊接續此場比賽">
+                            ${escapeHtml(rec.title)}
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div class="history-item-meta">${escapeHtml(statusText)}</div>
+                    <div class="history-item-time">最後更新: ${updatedStr}</div>
+                `;
+
+                if (deletingRecordId === rec.id) {
+                    html += `
+                        <div class="history-item-actions">
+                            <button class="history-btn delete-btn" onclick="confirmDeleteRecord('${rec.id}')">確定刪除</button>
+                            <button class="history-btn rename-btn" onclick="cancelDeleteRecord()">取消</button>
+                        </div>
+                    `;
+                } else if (renamingRecordId !== rec.id) {
+                    html += `
+                        <div class="history-item-actions">
+                            <button class="history-btn resume-btn" onclick="resumeTournament('${rec.id}')">${isActive ? '進行中' : '接續賽程'}</button>
+                            <button class="history-btn rename-btn" onclick="startRenameRecord('${rec.id}')">重新命名</button>
+                            <button class="history-btn delete-btn" onclick="startDeleteRecord('${rec.id}')">刪除</button>
+                        </div>
+                    `;
+                }
+
+                html += `</div>`;
+            });
+
+            container.innerHTML = html;
+
+            if (renamingRecordId) {
+                const inputEl = document.getElementById(`rename-input-${renamingRecordId}`);
+                if (inputEl) {
+                    inputEl.focus();
+                    inputEl.select();
+                }
+            }
+        }
+
+        function startRenameRecord(id) {
+            deletingRecordId = null;
+            renamingRecordId = id;
+            renderHistorySidebar();
+        }
+
+        function cancelRenameRecord() {
+            renamingRecordId = null;
+            renderHistorySidebar();
+        }
+
+        function confirmRenameRecord(id) {
+            const inputEl = document.getElementById(`rename-input-${id}`);
+            if (!inputEl) return;
+            const newTitle = inputEl.value.trim();
+            if (!newTitle) {
+                alert('名稱不能為空！');
+                return;
+            }
+            const list = loadHistoryList();
+            const rec = list.find(item => item.id === id);
+            if (rec) {
+                rec.title = newTitle;
+                rec.updatedAt = Date.now();
+                saveHistoryList(list);
+            }
+            renamingRecordId = null;
+            renderHistorySidebar();
+        }
+
+        function startDeleteRecord(id) {
+            renamingRecordId = null;
+            deletingRecordId = id;
+            renderHistorySidebar();
+        }
+
+        function cancelDeleteRecord() {
+            deletingRecordId = null;
+            renderHistorySidebar();
+        }
+
+        function confirmDeleteRecord(id) {
+            let list = loadHistoryList();
+            list = list.filter(item => item.id !== id);
+            saveHistoryList(list);
+            deletingRecordId = null;
+
+            if (currentTournamentId === id) {
+                pauseTimer();
+                currentTournamentId = null;
+                goToScreen('screen-1');
+            }
+            renderHistorySidebar();
+        }
+
+        function resumeTournament(id) {
+            const list = loadHistoryList();
+            const rec = list.find(item => item.id === id);
+            if (!rec) return;
+
+            pauseTimer();
+            currentTournamentId = rec.id;
+            players = JSON.parse(JSON.stringify(rec.players || []));
+            currentRound = rec.currentRound || 1;
+            totalSwissRounds = rec.totalSwissRounds || Math.ceil(Math.log2(rec.playerCount || 2));
+            knockoutPlayers = JSON.parse(JSON.stringify(rec.knockoutPlayers || []));
+            deMatches = JSON.parse(JSON.stringify(rec.deMatches || {}));
+            deCurrentRound = rec.deCurrentRound || 1;
+            finalRankings = JSON.parse(JSON.stringify(rec.finalRankings || []));
+            timeLeft = typeof rec.timeLeft === 'number' ? rec.timeLeft : 3;
+            activeTimerMode = rec.activeTimerMode || 'swiss';
+
+            document.getElementById('player-count').value = rec.playerCount || (players.length || '');
+
+            if (rec.currentScreen === 'screen-2') {
+                activeTimerMode = 'swiss';
+                buildNameInputsDOM(rec.playerCount, rec.draftNames || []);
+                goToScreen('screen-2');
+            } else if (rec.currentScreen === 'screen-3') {
+                activeTimerMode = 'swiss';
+                if (currentRound > totalSwissRounds) {
+                    renderSwissCompletedView();
+                } else {
+                    renderSwissRound(true);
+                    // 還原尚未結算的下拉選單選項
+                    if (rec.swissSelections) {
+                        const selects = document.querySelectorAll('#swiss-bracket-container .p1-select, #swiss-bracket-container .p2-select');
+                        selects.forEach(s => {
+                            const pid = s.getAttribute('data-id');
+                            if (pid && rec.swissSelections[pid] !== undefined) {
+                                s.value = rec.swissSelections[pid];
+                            }
+                        });
+                        checkSwissMatchesDone();
+                    }
+                }
+                updateDisplay('swiss');
+                goToScreen('screen-3');
+            } else if (rec.currentScreen === 'screen-4') {
+                activeTimerMode = 'ko';
+                renderKnockoutTree();
+                if (deCurrentRound < 99 && rec.koSelections) {
+                    const selects = document.querySelectorAll('#knockout-tree-container .ko-select');
+                    selects.forEach(s => {
+                        const key = `${s.getAttribute('data-match')}_${s.getAttribute('data-side')}`;
+                        if (rec.koSelections[key] !== undefined) {
+                            s.value = rec.koSelections[key];
+                        }
+                    });
+                    checkKoMatchesDone();
+                }
+                updateDisplay('ko');
+                goToScreen('screen-4');
+            }
+
+            renderHistorySidebar();
+        }
+
+        function returnToHome() {
+            saveCurrentTournamentState();
+            pauseTimer();
+            goToScreen('screen-1');
+            toggleHistorySidebar(true);
+            renderHistorySidebar();
+        }
+
         // === 畫面切換 ===
+        function goToScreen(showId) {
+            currentScreenId = showId;
+            document.querySelectorAll('.screen').forEach(el => {
+                el.classList.remove('active');
+            });
+            document.getElementById(showId).classList.add('active');
+        }
+
         function switchScreen(hideId, showId) {
+            currentScreenId = showId;
             document.getElementById(hideId).classList.remove('active');
-            setTimeout(() => { document.getElementById(showId).classList.add('active'); }, 400);
+            setTimeout(() => {
+                document.querySelectorAll('.screen').forEach(el => el.classList.remove('active'));
+                document.getElementById(showId).classList.add('active');
+                saveCurrentTournamentState();
+            }, 400);
         }
         function handleEnter(e, btnId) { if (e.key === 'Enter') document.getElementById(btnId).click(); }
 
         // === 初始化 ===
+        function buildNameInputsDOM(count, existingNames = []) {
+            const container = document.getElementById('name-inputs-container');
+            container.innerHTML = '';
+            for (let i = 1; i <= count; i++) {
+                const val = existingNames[i - 1] !== undefined ? escapeHtml(existingNames[i - 1]) : '';
+                container.innerHTML += `
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <span>${i}.</span>
+                        <input type="text" id="pname-${i}" value="${val}" placeholder="輸入第 ${i} 位選手名稱"
+                            oninput="saveCurrentTournamentState()"
+                            onkeypress="if(event.key==='Enter'&&${i===count}) document.getElementById('btn-screen-2').click(); else if(event.key==='Enter') document.getElementById('pname-${i+1}').focus();">
+                    </div>
+                `;
+            }
+        }
+
         function generateNameInputs() {
             const count = parseInt(document.getElementById('player-count').value);
             if (isNaN(count) || count < 2) { alert("請輸入有效的大於1的人數！"); return; }
             
-            totalSwissRounds = Math.ceil(Math.log2(count)); 
-            const container = document.getElementById('name-inputs-container');
-            container.innerHTML = '';
-            for (let i = 1; i <= count; i++) {
-                container.innerHTML += `
-                    <div style="display: flex; gap: 10px; align-items: center;">
-                        <span>${i}.</span>
-                        <input type="text" id="pname-${i}" placeholder="輸入第 ${i} 位選手名稱" onkeypress="if(event.key==='Enter'&&${i===count}) document.getElementById('btn-screen-2').click(); else if(event.key==='Enter') document.getElementById('pname-${i+1}').focus();">
-                    </div>
-                `;
-            }
+            pauseTimer();
+            players = [];
+            currentRound = 1;
+            totalSwissRounds = Math.ceil(Math.log2(count));
+            knockoutPlayers = [];
+            deMatches = {};
+            deCurrentRound = 1;
+            finalRankings = [];
+            timeLeft = 3;
+            activeTimerMode = 'swiss';
+
+            buildNameInputsDOM(count);
+            createNewTournamentRecord(count);
             switchScreen('screen-1', 'screen-2');
-            setTimeout(() => document.getElementById('pname-1').focus(), 450);
+            setTimeout(() => {
+                const firstInput = document.getElementById('pname-1');
+                if (firstInput) firstInput.focus();
+            }, 450);
         }
 
         function startSwissTournament() {
             const count = parseInt(document.getElementById('player-count').value);
             players = [];
             for (let i = 1; i <= count; i++) {
-                const name = document.getElementById(`pname-${i}`).value || `選手 ${i}`;
+                const name = document.getElementById(`pname-${i}`).value.trim() || `選手 ${i}`;
                 players.push({ id: i, name: name, score: 0 });
             }
+            currentRound = 1;
+            activeTimerMode = 'swiss';
             renderSwissRound();
             switchScreen('screen-2', 'screen-3');
         }
 
         // === 瑞士輪邏輯 ===
-        function renderSwissRound() {
+        function renderSwissCompletedView() {
+            document.getElementById('round-indicator').innerText = `瑞士輪已結束`;
+            document.getElementById('round-title').innerText = `瑞士輪 - 第 ${totalSwissRounds} 場`;
+            document.getElementById('swiss-bracket-container').innerHTML = `<h3 style="color:var(--success)">瑞士輪全部結束！分數已結算完成。</h3>`;
+            document.getElementById('btn-end-match').style.display = 'none';
+            document.getElementById('btn-start-knockout').style.display = 'inline-block';
+        }
+
+        function renderSwissRound(skipTimerReset = false) {
             document.getElementById('round-indicator').innerText = `目前場數: ${currentRound} / ${totalSwissRounds}`;
             document.getElementById('round-title').innerText = `瑞士輪 - 第 ${currentRound} 場`;
-            resetTimer('swiss'); 
+            document.getElementById('btn-end-match').style.display = 'inline-block';
+            document.getElementById('btn-start-knockout').style.display = 'none';
+
+            if (!skipTimerReset) {
+                resetTimer('swiss');
+            }
             
             players.sort((a, b) => b.score - a.score);
             const container = document.getElementById('swiss-bracket-container');
@@ -304,24 +938,24 @@
                     container.innerHTML += `
                         <div class="match-row">
                             <div class="player-box">
-                                <span>${p1.name} (${p1.score}分)</span>
-                                <select class="result-select p1-select" data-id="${p1.id}" onchange="syncSwissSelect(this, 'left'); checkSwissMatchesDone();">
+                                <span>${escapeHtml(p1.name)} (${p1.score}分)</span>
+                                <select class="result-select p1-select" data-id="${p1.id}" onchange="syncSwissSelect(this, 'left'); checkSwissMatchesDone(); saveCurrentTournamentState();">
                                     <option value="" selected disabled>-</option><option value="win">贏</option><option value="loss">輸</option><option value="draw">平局</option>
                                 </select>
                             </div>
                             <div class="vs">VS</div>
                             <div class="player-box right">
-                                <select class="result-select p2-select" data-id="${p2.id}" onchange="syncSwissSelect(this, 'right'); checkSwissMatchesDone();">
+                                <select class="result-select p2-select" data-id="${p2.id}" onchange="syncSwissSelect(this, 'right'); checkSwissMatchesDone(); saveCurrentTournamentState();">
                                     <option value="" selected disabled>-</option><option value="win">贏</option><option value="loss">輸</option><option value="draw">平局</option>
                                 </select>
-                                <span>${p2.name} (${p2.score}分)</span>
+                                <span>${escapeHtml(p2.name)} (${p2.score}分)</span>
                             </div>
                         </div>
                     `;
                 } else {
                     container.innerHTML += `
                         <div class="match-row" style="border-color: var(--disabled);">
-                            <span>${players[i].name} (${players[i].score}分) - 本輪輪空 (自動得3分)</span>
+                            <span>${escapeHtml(players[i].name)} (${players[i].score}分) - 本輪輪空 (自動得3分)</span>
                             <input type="hidden" class="result-select bye" data-id="${players[i].id}" value="win">
                         </div>
                     `;
@@ -335,14 +969,19 @@
             const leftSelect = row.querySelector('.p1-select');
             const rightSelect = row.querySelector('.p2-select');
             if (!leftSelect || !rightSelect) return;
-            if (side === 'left') {
-                if (element.value === 'win') rightSelect.value = 'loss';
-                else if (element.value === 'loss') rightSelect.value = 'win';
-                else if (element.value === 'draw') rightSelect.value = 'draw';
-            } else {
-                if (element.value === 'win') leftSelect.value = 'loss';
-                else if (element.value === 'loss') leftSelect.value = 'win';
-                else if (element.value === 'draw') leftSelect.value = 'draw';
+            const oppSelect = side === 'left' ? rightSelect : leftSelect;
+
+            if (element.value === 'win') {
+                // 若選「贏」則對面自動選「輸」
+                oppSelect.value = 'loss';
+            } else if (element.value === 'draw') {
+                oppSelect.value = 'draw';
+            } else if (element.value === 'loss') {
+                // 某側選擇「輸」時，不強制對面變為「贏」，讓對面也可以選「輸」(雙敗) 或「贏」
+                // 若對面原本是「平局」，則重置對面選項避免單方平局
+                if (oppSelect.value === 'draw') {
+                    oppSelect.value = '';
+                }
             }
         }
 
@@ -372,13 +1011,11 @@
 
             currentRound++;
             if (currentRound > totalSwissRounds) {
-                document.getElementById('round-indicator').innerText = `瑞士輪已結束`;
-                document.getElementById('swiss-bracket-container').innerHTML = `<h3 style="color:var(--success)">瑞士輪全部結束！分數已結算完成。</h3>`;
-                document.getElementById('btn-end-match').style.display = 'none';
-                document.getElementById('btn-start-knockout').style.display = 'inline-block';
+                renderSwissCompletedView();
             } else {
                 renderSwissRound();
             }
+            saveCurrentTournamentState();
         }
 
         // === 畫面 3 -> 畫面 4 (前四強 雙淘汰 - 一戰定生死) ===
@@ -438,7 +1075,7 @@
             let resultSelect = '';
             if (isCurrentRound && !p.isBye && match.winner === null) {
                 resultSelect = `
-                    <select class="ko-select" data-match="${match.id}" data-side="${playerKey}" onchange="syncKoSelect(this); checkKoMatchesDone();">
+                    <select class="ko-select" data-match="${match.id}" data-side="${playerKey}" onchange="syncKoSelect(this); checkKoMatchesDone(); saveCurrentTournamentState();">
                         <option value="" disabled selected>-</option>
                         <option value="win">贏</option><option value="loss">輸</option><option value="draw">平</option>
                     </select>
@@ -455,7 +1092,7 @@
 
             return `
                 <div class="ko-row-player ${match.winner && match.winner.id !== p.id ? 'loser' : ''}">
-                    <span class="ko-name" title="${p.name}">${p.name}</span>
+                    <span class="ko-name" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</span>
                     ${resultSelect}
                 </div>
             `;
@@ -537,9 +1174,9 @@
                 html += `
                 <div class="rankings-box">
                     <h2 style="color: var(--success); font-size: 2.5rem; margin-top:0;">🏆 最終賽事成績 🏆</h2>
-                    <div class="rank-item rank-1">🥇 冠軍: ${finalRankings[0].name}</div>
-                    <div class="rank-item rank-2">🥈 亞軍: ${finalRankings[1].name}</div>
-                    <div class="rank-item rank-3">🥉 季軍: ${finalRankings[2].name}</div>
+                    <div class="rank-item rank-1">🥇 冠軍: ${escapeHtml(finalRankings[0].name)}</div>
+                    <div class="rank-item rank-2">🥈 亞軍: ${escapeHtml(finalRankings[1].name)}</div>
+                    <div class="rank-item rank-3">🥉 季軍: ${escapeHtml(finalRankings[2].name)}</div>
                 </div>
                 `;
             }
@@ -608,6 +1245,7 @@
                     }
                 });
                 checkKoMatchesDone();
+                saveCurrentTournamentState();
                 return; // 終止推進
             }
 
@@ -654,6 +1292,7 @@
 
             seedRoundMatches(); // 自動結算新一輪可能出現的輪空
             renderKnockoutTree();
+            saveCurrentTournamentState();
         }
 
         // === 計時器邏輯 ===
@@ -680,11 +1319,16 @@
             if (isRunning || timeLeft === 0) return;
             isRunning = true;
             timerInterval = setInterval(() => {
-                if (timeLeft > 0) { timeLeft--; updateDisplay(mode); }
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay(mode);
+                    saveCurrentTournamentState();
+                }
                 if (timeLeft === 0) {
                     clearInterval(timerInterval);
                     isRunning = false;
                     updateDisplay(mode); 
+                    saveCurrentTournamentState();
                 }
             }, 1000);
         }
@@ -698,6 +1342,7 @@
             pauseTimer(mode);
             timeLeft = 3; 
             updateDisplay(mode);
+            saveCurrentTournamentState();
         }
 
         function addTime(mode = activeTimerMode) {
@@ -705,7 +1350,13 @@
             pauseTimer(mode);
             timeLeft = 5 * 60; 
             updateDisplay(mode);
+            saveCurrentTournamentState();
         }
+
+        // 頁面載入時渲染左側歷史紀錄欄
+        window.addEventListener('DOMContentLoaded', () => {
+            renderHistorySidebar();
+        });
     </script>
 </body>
 </html>
