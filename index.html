@@ -418,6 +418,20 @@
             border-right: 8px solid var(--accent-color);
             box-sizing: border-box; border-radius: 8px 8px 0 0;
         }
+        .se8-tree-wrapper {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            flex-wrap: nowrap;
+            min-width: max-content;
+            margin: 0 auto;
+        }
+        .tree-row.se8-qf-row {
+            gap: 16px;
+        }
+        .fork-branches.se8-fork {
+            width: 244px;
+        }
         
         /* 最終排行榜 (冠軍、亞軍、四強、八強) */
         .rankings-box {
@@ -530,12 +544,14 @@
         let currentRound = 1;
         let totalSwissRounds = 0;
         
-        // 雙淘汰變數
+        // 淘汰賽變數
+        let koMode = 'top4_de'; // 'top4_de' (<=8人 四強雙淘汰) 或 'top8_se' (>8人 八強單淘汰)
         let knockoutPlayers = [];
         let deMatches = {};
         let deCurrentRound = 1;
         let gfFormat = 'bo1'; // 'bo1' (預設) 或 'bo3'
-        let finalRankings = []; // [0:冠軍, 1:亞軍, 2:季軍]
+        let finalRankings = []; // [0:冠軍, 1:亞軍, 2:四強, 3:四強]
+        let top8Rankings = [];  // [八強 4 人]
         
         let timerInterval = null;
         let timeLeft = 3; 
@@ -624,12 +640,14 @@
                 currentRound: 1,
                 totalSwissRounds: totalSwissRounds,
                 swissSelections: {},
+                koMode: playerCount > 8 ? 'top8_se' : 'top4_de',
                 knockoutPlayers: [],
                 deMatches: {},
                 deCurrentRound: 1,
                 gfFormat: 'bo1',
                 koSelections: {},
                 finalRankings: [],
+                top8Rankings: [],
                 timeLeft: 3,
                 activeTimerMode: 'swiss'
             };
@@ -652,11 +670,13 @@
             rec.players = JSON.parse(JSON.stringify(players));
             rec.currentRound = currentRound;
             rec.totalSwissRounds = totalSwissRounds;
+            rec.koMode = koMode;
             rec.knockoutPlayers = JSON.parse(JSON.stringify(knockoutPlayers));
             rec.deMatches = JSON.parse(JSON.stringify(deMatches));
             rec.deCurrentRound = deCurrentRound;
             rec.gfFormat = gfFormat;
             rec.finalRankings = JSON.parse(JSON.stringify(finalRankings));
+            rec.top8Rankings = JSON.parse(JSON.stringify(top8Rankings));
             rec.timeLeft = timeLeft;
             rec.activeTimerMode = activeTimerMode;
 
@@ -680,7 +700,9 @@
             }
             if (rec.currentScreen === 'screen-3') {
                 if (rec.currentRound > rec.totalSwissRounds) {
-                    return `✅ 瑞士輪結束・待進四強 (${pCount}人)`;
+                    return pCount > 8
+                        ? `✅ 瑞士輪結束・待進八強 (${pCount}人)`
+                        : `✅ 瑞士輪結束・待進四強 (${pCount}人)`;
                 }
                 return `⚔️ 瑞士輪 第 ${rec.currentRound} / ${rec.totalSwissRounds} 場 (${pCount}人)`;
             }
@@ -690,7 +712,10 @@
                     const champName = (champ.isBye || champ.isVacant) ? '從缺' : champ.name;
                     return `🏆 已完賽 (冠軍: ${champName})`;
                 }
-                return `🔥 雙淘汰賽 第 ${rec.deCurrentRound} / 4 場 (${pCount}人)`;
+                const isTop8 = rec.koMode === 'top8_se' || pCount > 8;
+                return isTop8
+                    ? `🔥 八強淘汰賽 第 ${rec.deCurrentRound} / 3 場 (${pCount}人)`
+                    : `🔥 四強雙淘汰 第 ${rec.deCurrentRound} / 4 場 (${pCount}人)`;
             }
             return `進行中 (${pCount}人)`;
         }
@@ -860,11 +885,13 @@
             players = JSON.parse(JSON.stringify(rec.players || []));
             currentRound = rec.currentRound || 1;
             totalSwissRounds = rec.totalSwissRounds || Math.ceil(Math.log2(rec.playerCount || 2));
+            koMode = rec.koMode || ((rec.playerCount || players.length) > 8 ? 'top8_se' : 'top4_de');
             knockoutPlayers = JSON.parse(JSON.stringify(rec.knockoutPlayers || []));
             deMatches = JSON.parse(JSON.stringify(rec.deMatches || {}));
             deCurrentRound = rec.deCurrentRound || 1;
             gfFormat = rec.gfFormat || 'bo1';
             finalRankings = JSON.parse(JSON.stringify(rec.finalRankings || []));
+            top8Rankings = JSON.parse(JSON.stringify(rec.top8Rankings || []));
             timeLeft = typeof rec.timeLeft === 'number' ? rec.timeLeft : 3;
             activeTimerMode = rec.activeTimerMode || 'swiss';
 
@@ -973,11 +1000,13 @@
             players = [];
             currentRound = 1;
             totalSwissRounds = Math.ceil(Math.log2(count));
+            koMode = count > 8 ? 'top8_se' : 'top4_de';
             knockoutPlayers = [];
             deMatches = {};
             deCurrentRound = 1;
             gfFormat = 'bo1';
             finalRankings = [];
+            top8Rankings = [];
             timeLeft = 3;
             activeTimerMode = 'swiss';
 
@@ -1020,7 +1049,9 @@
             document.getElementById('round-title').innerText = `瑞士輪 - 第 ${totalSwissRounds} 場`;
             document.getElementById('swiss-bracket-container').innerHTML = `<h3 style="color:var(--success)">瑞士輪全部結束！分數已結算完成。</h3>`;
             document.getElementById('btn-end-match').style.display = 'none';
-            document.getElementById('btn-start-knockout').style.display = 'inline-block';
+            const koBtn = document.getElementById('btn-start-knockout');
+            koBtn.innerText = players.length > 8 ? '進入八強單淘汰賽 (前8強)' : '進入雙淘汰賽 (前4強)';
+            koBtn.style.display = 'inline-block';
         }
 
         function renderSwissRound(skipTimerReset = false) {
@@ -1125,28 +1156,50 @@
             saveCurrentTournamentState();
         }
 
-        // === 畫面 3 -> 畫面 4 (前四強 雙淘汰 - 一戰定生死 / 冠亞可切換BO3) ===
+        // === 畫面 3 -> 畫面 4 (<=8人: 四強雙淘汰 / >8人: 八強單淘汰) ===
         function startKnockoutPhase() {
             activeTimerMode = 'ko';
             gfFormat = 'bo1';
+            finalRankings = [];
+            top8Rankings = [];
             players.sort((a, b) => b.score - a.score);
-            
-            let topCount = Math.min(4, players.length);
-            knockoutPlayers = players.slice(0, topCount);
-            
-            while(knockoutPlayers.length < 4) {
-                knockoutPlayers.push({ id: 'bye-' + knockoutPlayers.length, name: '輪空 (Bye)', score: 0, isBye: true });
-            }
 
-            // 初始化雙淘汰結構 (移除 gf2)
-            deMatches = {
-                w1: { id: 'w1', title: '勝部首輪 (Seed 1 v 4)', p1: knockoutPlayers[0], p2: knockoutPlayers[3], winner: null, loser: null },
-                w2: { id: 'w2', title: '勝部首輪 (Seed 2 v 3)', p1: knockoutPlayers[1], p2: knockoutPlayers[2], winner: null, loser: null },
-                w3: { id: 'w3', title: '勝部決賽', p1: null, p2: null, winner: null, loser: null },
-                l1: { id: 'l1', title: '敗部首輪', p1: null, p2: null, winner: null, loser: null },
-                l2: { id: 'l2', title: '敗部決賽 (爭奪季軍)', p1: null, p2: null, winner: null, loser: null },
-                gf1: { id: 'gf1', title: '總決賽 (BO1 一戰定生死)', p1: null, p2: null, winner: null, loser: null }
-            };
+            if (players.length > 8) {
+                koMode = 'top8_se';
+                knockoutPlayers = players.slice(0, 8);
+                while (knockoutPlayers.length < 8) {
+                    knockoutPlayers.push({ id: 'bye-' + knockoutPlayers.length, name: '輪空 (Bye)', score: 0, isBye: true });
+                }
+
+                // 初始化八強單淘汰結構 (8進4 -> 4進2 -> 總決賽)
+                deMatches = {
+                    qf1: { id: 'qf1', title: '八強賽 1 (Seed 1 v 8)', p1: knockoutPlayers[0], p2: knockoutPlayers[7], winner: null, loser: null },
+                    qf2: { id: 'qf2', title: '八強賽 2 (Seed 4 v 5)', p1: knockoutPlayers[3], p2: knockoutPlayers[4], winner: null, loser: null },
+                    qf3: { id: 'qf3', title: '八強賽 3 (Seed 2 v 7)', p1: knockoutPlayers[1], p2: knockoutPlayers[6], winner: null, loser: null },
+                    qf4: { id: 'qf4', title: '八強賽 4 (Seed 3 v 6)', p1: knockoutPlayers[2], p2: knockoutPlayers[5], winner: null, loser: null },
+                    sf1: { id: 'sf1', title: '四強準決賽 1', p1: null, p2: null, winner: null, loser: null },
+                    sf2: { id: 'sf2', title: '四強準決賽 2', p1: null, p2: null, winner: null, loser: null },
+                    gf1: { id: 'gf1', title: '總決賽 (BO1 一戰定生死)', p1: null, p2: null, winner: null, loser: null }
+                };
+            } else {
+                koMode = 'top4_de';
+                let topCount = Math.min(4, players.length);
+                knockoutPlayers = players.slice(0, topCount);
+                
+                while(knockoutPlayers.length < 4) {
+                    knockoutPlayers.push({ id: 'bye-' + knockoutPlayers.length, name: '輪空 (Bye)', score: 0, isBye: true });
+                }
+
+                // 初始化四強雙淘汰結構
+                deMatches = {
+                    w1: { id: 'w1', title: '勝部首輪 (Seed 1 v 4)', p1: knockoutPlayers[0], p2: knockoutPlayers[3], winner: null, loser: null },
+                    w2: { id: 'w2', title: '勝部首輪 (Seed 2 v 3)', p1: knockoutPlayers[1], p2: knockoutPlayers[2], winner: null, loser: null },
+                    w3: { id: 'w3', title: '勝部決賽', p1: null, p2: null, winner: null, loser: null },
+                    l1: { id: 'l1', title: '敗部首輪', p1: null, p2: null, winner: null, loser: null },
+                    l2: { id: 'l2', title: '敗部決賽 (爭奪季軍)', p1: null, p2: null, winner: null, loser: null },
+                    gf1: { id: 'gf1', title: '總決賽 (BO1 一戰定生死)', p1: null, p2: null, winner: null, loser: null }
+                };
+            }
 
             deCurrentRound = 1;
             seedRoundMatches();
@@ -1166,18 +1219,24 @@
         }
 
         function getMatchesForRound(round) {
+            if (koMode === 'top8_se') {
+                if (round === 1) return ['qf1', 'qf2', 'qf3', 'qf4'];
+                if (round === 2) return ['sf1', 'sf2'];
+                if (round === 3) return ['gf1'];
+                return [];
+            }
             if (round === 1) return ['w1', 'w2'];
             if (round === 2) return ['w3', 'l1'];
             if (round === 3) return ['l2'];
             if (round === 4) return ['gf1'];
-            return []; // 移除第五輪
+            return [];
         }
 
         function seedRoundMatches() {
             let activeKeys = getMatchesForRound(deCurrentRound);
             activeKeys.forEach(mk => {
                 let m = deMatches[mk];
-                if (m.p1 && m.p2 && m.winner === null) {
+                if (m && m.p1 && m.p2 && m.winner === null) {
                     if (m.p1.isBye && m.p2.isBye) {
                         m.isDoubleLoss = true;
                         m.winner = { id: 'bye-win-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
@@ -1258,10 +1317,20 @@
             `;
         }
 
-        // 渲染直式樹狀圖 (分三區塊)
+        // 渲染直式樹狀圖
         function renderKnockoutTree() {
+            const totalKoRounds = koMode === 'top8_se' ? 3 : 4;
+            const koTitleEl = document.getElementById('knockout-title');
+            if (koTitleEl) {
+                koTitleEl.innerText = koMode === 'top8_se'
+                    ? '八強單淘汰賽 (一戰定生死)'
+                    : '四強雙淘汰賽 (一戰定生死)';
+            }
+
             if (deCurrentRound < 99) {
-                document.getElementById('ko-round-indicator').innerText = `雙淘汰場數: ${deCurrentRound} / 4`;
+                document.getElementById('ko-round-indicator').innerText = koMode === 'top8_se'
+                    ? `八強淘汰場數: ${deCurrentRound} / ${totalKoRounds}`
+                    : `雙淘汰場數: ${deCurrentRound} / ${totalKoRounds}`;
                 document.getElementById('btn-next-ko-match').style.display = 'inline-block';
             } else {
                 document.getElementById('ko-round-indicator').innerText = `比賽完全結束`;
@@ -1272,37 +1341,65 @@
             
             let html = `<div class="de-bracket-container">`;
 
-            // 【第一區：勝部賽程樹狀圖】
-            html += `
-            <div class="bracket-section" style="border-color: var(--accent-color);">
-                <h3 style="color: var(--accent-color);">🟦 勝部賽程 (Winners Bracket)</h3>
-                <div class="vertical-tree">
-                    <div class="tree-row">${getKoCard('w3')}</div>
-                    <div class="fork-stem"></div>
-                    <div class="fork-branches"></div>
-                    <div class="tree-row" style="gap: 40px;">
-                        ${getKoCard('w1')}
-                        ${getKoCard('w2')}
+            if (koMode === 'top8_se') {
+                // 【八強單淘汰：八強 (8進4) → 四強準決賽 (4進2) 直式樹狀圖】
+                html += `
+                <div class="bracket-section" style="border-color: var(--accent-color);">
+                    <h3 style="color: var(--accent-color);">🟦 八強暨四強賽程 (Quarterfinals & Semifinals)</h3>
+                    <div class="se8-tree-wrapper">
+                        <div class="vertical-tree">
+                            <div class="tree-row">${getKoCard('sf1')}</div>
+                            <div class="fork-stem"></div>
+                            <div class="fork-branches se8-fork"></div>
+                            <div class="tree-row se8-qf-row">
+                                ${getKoCard('qf1')}
+                                ${getKoCard('qf2')}
+                            </div>
+                        </div>
+                        <div class="vertical-tree">
+                            <div class="tree-row">${getKoCard('sf2')}</div>
+                            <div class="fork-stem"></div>
+                            <div class="fork-branches se8-fork"></div>
+                            <div class="tree-row se8-qf-row">
+                                ${getKoCard('qf3')}
+                                ${getKoCard('qf4')}
+                            </div>
+                        </div>
                     </div>
-                </div>
-            </div>`;
-
-            // 【第二區：敗部賽程樹狀圖】
-            html += `
-            <div class="bracket-section" style="border-color: var(--danger);">
-                <h3 style="color: var(--danger);">🟥 敗部賽程 (Losers Bracket)</h3>
-                <div class="vertical-tree">
-                    <div class="tree-row">${getKoCard('l2')}</div>
-                    <div class="fork-stem"></div>
-                    <div class="fork-branches"></div>
-                    <div class="tree-row" style="gap: 40px;">
-                        <div class="ko-card dummy">勝部決賽敗者<br>(等待降級)</div>
-                        ${getKoCard('l1')}
+                </div>`;
+            } else {
+                // 【四強雙淘汰 第一區：勝部賽程樹狀圖】
+                html += `
+                <div class="bracket-section" style="border-color: var(--accent-color);">
+                    <h3 style="color: var(--accent-color);">🟦 勝部賽程 (Winners Bracket)</h3>
+                    <div class="vertical-tree">
+                        <div class="tree-row">${getKoCard('w3')}</div>
+                        <div class="fork-stem"></div>
+                        <div class="fork-branches"></div>
+                        <div class="tree-row" style="gap: 40px;">
+                            ${getKoCard('w1')}
+                            ${getKoCard('w2')}
+                        </div>
                     </div>
-                </div>
-            </div>`;
+                </div>`;
 
-            // 【第三區：總決賽 (支援切換 BO1 / BO3)】
+                // 【四強雙淘汰 第二區：敗部賽程樹狀圖】
+                html += `
+                <div class="bracket-section" style="border-color: var(--danger);">
+                    <h3 style="color: var(--danger);">🟥 敗部賽程 (Losers Bracket)</h3>
+                    <div class="vertical-tree">
+                        <div class="tree-row">${getKoCard('l2')}</div>
+                        <div class="fork-stem"></div>
+                        <div class="fork-branches"></div>
+                        <div class="tree-row" style="gap: 40px;">
+                            <div class="ko-card dummy">勝部決賽敗者<br>(等待降級)</div>
+                            ${getKoCard('l1')}
+                        </div>
+                    </div>
+                </div>`;
+            }
+
+            // 【總決賽 (支援切換 BO1 / BO3)】
             html += `
             <div class="bracket-section" style="border-color: var(--gold);">
                 <h3 style="color: var(--gold);">🟨 總決賽 (Grand Finals)</h3>
@@ -1334,9 +1431,17 @@
 
                 let top8RowHTML = '';
                 if (players.length > 8) {
-                    const sortedBySwiss = [...players].sort((a, b) => b.score - a.score);
-                    const top8Players = sortedBySwiss.slice(4, 8);
-                    const top8HTML = top8Players.map(p => `${formatRankingPlayerHTML(p)} <span style="font-size:0.85em; color:#aaa;">(${p.score}分)</span>`).join(' 、 ');
+                    let top8Players = [];
+                    if (top8Rankings && top8Rankings.length === 4) {
+                        top8Players = top8Rankings;
+                    } else {
+                        const sortedBySwiss = [...players].sort((a, b) => b.score - a.score);
+                        top8Players = sortedBySwiss.slice(4, 8);
+                    }
+                    const top8HTML = top8Players.map(p => {
+                        if (!p || p.isVacant || p.isBye || p.name === '從缺') return '從缺';
+                        return `${formatRankingPlayerHTML(p)} <span style="font-size:0.85em; color:#aaa;">(${p.score}分)</span>`;
+                    }).join(' 、 ');
                     top8RowHTML = `<div class="rank-item rank-4">🎖️ 八強: ${top8HTML}</div>`;
                 }
 
@@ -1393,7 +1498,7 @@
             
             activeKeys.forEach(mk => {
                 let m = deMatches[mk];
-                if (m.winner !== null) return; 
+                if (!m || m.winner !== null) return; 
                 const card = document.getElementById(m.id);
                 if(card) {
                     const selects = card.querySelectorAll('select');
@@ -1425,7 +1530,7 @@
             // 1. 偵測平局 (強制重賽機制)
             activeKeys.forEach(mk => {
                 let m = deMatches[mk];
-                if (m.winner !== null) return; 
+                if (!m || m.winner !== null) return; 
                 const card = document.getElementById(m.id);
                 if(card) {
                     const p1Select = card.querySelector('.ko-select[data-side="p1"]');
@@ -1458,7 +1563,7 @@
             // 2. 寫入勝負結果 (含雙敗判定與總決賽 BO3 勝場數判定)
             activeKeys.forEach(mk => {
                 let m = deMatches[mk];
-                if (m.winner !== null) return; 
+                if (!m || m.winner !== null) return; 
                 const card = document.getElementById(m.id);
                 if(card) {
                     const p1Select = card.querySelector('.ko-select[data-side="p1"]');
@@ -1498,40 +1603,90 @@
                 }
             });
 
-            // 3. 雙淘汰樹狀推進邏輯 (一戰定生死 / BO3 版)
-            if (deCurrentRound === 1) {
-                deMatches.w3.p1 = deMatches.w1.winner;
-                deMatches.w3.p2 = deMatches.w2.winner;
-                deMatches.l1.p1 = deMatches.w1.loser;
-                deMatches.l1.p2 = deMatches.w2.loser;
-                deCurrentRound = 2;
-                resetTimer('ko');
-            } else if (deCurrentRound === 2) {
-                deMatches.gf1.p1 = deMatches.w3.winner;
-                deMatches.l2.p1 = deMatches.w3.loser; // 勝部決賽敗者掉入敗部
-                deMatches.l2.p2 = deMatches.l1.winner; // 敗部首輪勝者挺進
-                finalRankings[3] = (deMatches.l1.isDoubleLoss || !deMatches.l1.loser || deMatches.l1.loser.isBye)
-                    ? { name: '從缺', isVacant: true }
-                    : deMatches.l1.loser; // l1敗者確定為【四強 (第4名)】(若雙敗則從缺)
-                deCurrentRound = 3;
-                resetTimer('ko');
-            } else if (deCurrentRound === 3) {
-                deMatches.gf1.p2 = deMatches.l2.winner; // 敗部冠軍出爐
-                finalRankings[2] = (deMatches.l2.isDoubleLoss || !deMatches.l2.loser || deMatches.l2.loser.isBye)
-                    ? { name: '從缺', isVacant: true }
-                    : deMatches.l2.loser;  // l2敗者確定為【四強 (第3名)】(若雙敗則從缺)
-                deCurrentRound = 4;
-                resetTimer('ko');
-            } else if (deCurrentRound === 4) {
-                // 第四輪打完，直接結算冠亞軍，無視誰是勝部/敗部 (若雙敗或輪空則對應名次從缺)
-                finalRankings[0] = (deMatches.gf1.isDoubleLoss || !deMatches.gf1.winner || deMatches.gf1.winner.isBye)
-                    ? { name: '從缺', isVacant: true }
-                    : deMatches.gf1.winner; // 冠軍
-                finalRankings[1] = (deMatches.gf1.isDoubleLoss || !deMatches.gf1.loser || deMatches.gf1.loser.isBye)
-                    ? { name: '從缺', isVacant: true }
-                    : deMatches.gf1.loser;  // 亞軍
-                deCurrentRound = 99; 
-                pauseTimer('ko');
+            // 3. 樹狀圖推進邏輯 (八強單淘汰 vs 四強雙淘汰)
+            if (koMode === 'top8_se') {
+                if (deCurrentRound === 1) {
+                    deMatches.sf1.p1 = deMatches.qf1.winner;
+                    deMatches.sf1.p2 = deMatches.qf2.winner;
+                    deMatches.sf2.p1 = deMatches.qf3.winner;
+                    deMatches.sf2.p2 = deMatches.qf4.winner;
+
+                    // 八強首輪淘汰的 4 人即為「八強」，依瑞士輪分數由高至低排序
+                    const qfLosers = ['qf1', 'qf2', 'qf3', 'qf4'].map(k => {
+                        const m = deMatches[k];
+                        if (m.isDoubleLoss || !m.loser || m.loser.isBye) {
+                            return { name: '從缺', isVacant: true, score: -1 };
+                        }
+                        return m.loser;
+                    });
+                    qfLosers.sort((a, b) => (b.score || 0) - (a.score || 0));
+                    top8Rankings = qfLosers;
+
+                    deCurrentRound = 2;
+                    resetTimer('ko');
+                } else if (deCurrentRound === 2) {
+                    deMatches.gf1.p1 = deMatches.sf1.winner;
+                    deMatches.gf1.p2 = deMatches.sf2.winner;
+
+                    // 四強準決賽淘汰的 2 人即為「四強」，依瑞士輪分數由高至低排序
+                    const sfLosers = ['sf1', 'sf2'].map(k => {
+                        const m = deMatches[k];
+                        if (m.isDoubleLoss || !m.loser || m.loser.isBye) {
+                            return { name: '從缺', isVacant: true, score: -1 };
+                        }
+                        return m.loser;
+                    });
+                    sfLosers.sort((a, b) => (b.score || 0) - (a.score || 0));
+                    finalRankings[2] = sfLosers[0];
+                    finalRankings[3] = sfLosers[1];
+
+                    deCurrentRound = 3;
+                    resetTimer('ko');
+                } else if (deCurrentRound === 3) {
+                    finalRankings[0] = (deMatches.gf1.isDoubleLoss || !deMatches.gf1.winner || deMatches.gf1.winner.isBye)
+                        ? { name: '從缺', isVacant: true }
+                        : deMatches.gf1.winner;
+                    finalRankings[1] = (deMatches.gf1.isDoubleLoss || !deMatches.gf1.loser || deMatches.gf1.loser.isBye)
+                        ? { name: '從缺', isVacant: true }
+                        : deMatches.gf1.loser;
+                    deCurrentRound = 99;
+                    pauseTimer('ko');
+                }
+            } else {
+                if (deCurrentRound === 1) {
+                    deMatches.w3.p1 = deMatches.w1.winner;
+                    deMatches.w3.p2 = deMatches.w2.winner;
+                    deMatches.l1.p1 = deMatches.w1.loser;
+                    deMatches.l1.p2 = deMatches.w2.loser;
+                    deCurrentRound = 2;
+                    resetTimer('ko');
+                } else if (deCurrentRound === 2) {
+                    deMatches.gf1.p1 = deMatches.w3.winner;
+                    deMatches.l2.p1 = deMatches.w3.loser; // 勝部決賽敗者掉入敗部
+                    deMatches.l2.p2 = deMatches.l1.winner; // 敗部首輪勝者挺進
+                    finalRankings[3] = (deMatches.l1.isDoubleLoss || !deMatches.l1.loser || deMatches.l1.loser.isBye)
+                        ? { name: '從缺', isVacant: true }
+                        : deMatches.l1.loser; // l1敗者確定為【四強 (第4名)】(若雙敗則從缺)
+                    deCurrentRound = 3;
+                    resetTimer('ko');
+                } else if (deCurrentRound === 3) {
+                    deMatches.gf1.p2 = deMatches.l2.winner; // 敗部冠軍出爐
+                    finalRankings[2] = (deMatches.l2.isDoubleLoss || !deMatches.l2.loser || deMatches.l2.loser.isBye)
+                        ? { name: '從缺', isVacant: true }
+                        : deMatches.l2.loser;  // l2敗者確定為【四強 (第3名)】(若雙敗則從缺)
+                    deCurrentRound = 4;
+                    resetTimer('ko');
+                } else if (deCurrentRound === 4) {
+                    // 第四輪打完，直接結算冠亞軍，無視誰是勝部/敗部 (若雙敗或輪空則對應名次從缺)
+                    finalRankings[0] = (deMatches.gf1.isDoubleLoss || !deMatches.gf1.winner || deMatches.gf1.winner.isBye)
+                        ? { name: '從缺', isVacant: true }
+                        : deMatches.gf1.winner; // 冠軍
+                    finalRankings[1] = (deMatches.gf1.isDoubleLoss || !deMatches.gf1.loser || deMatches.gf1.loser.isBye)
+                        ? { name: '從缺', isVacant: true }
+                        : deMatches.gf1.loser;  // 亞軍
+                    deCurrentRound = 99; 
+                    pauseTimer('ko');
+                }
             }
 
             seedRoundMatches(); // 自動結算新一輪可能出現的輪空
