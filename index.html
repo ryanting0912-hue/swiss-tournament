@@ -194,7 +194,7 @@
         <h2 id="round-title">瑞士輪 - 第 1 場</h2>
         
         <div class="timer-container">
-            <div id="timer-display" class="timer-display">25:00</div>
+            <div id="timer-display" class="timer-display">00:03</div>
             <div class="timer-controls">
                 <button onclick="startTimer()">開始</button>
                 <button onclick="pauseTimer()">暫停</button>
@@ -216,7 +216,7 @@
         <h2 id="knockout-title">四強雙淘汰賽 (一戰定生死)</h2>
         
         <div class="timer-container">
-            <div id="timer-display-ko" class="timer-display">25:00</div>
+            <div id="timer-display-ko" class="timer-display">00:03</div>
             <div class="timer-controls">
                 <button onclick="startTimer('ko')">開始</button>
                 <button onclick="pauseTimer('ko')">暫停</button>
@@ -245,7 +245,7 @@
         let finalRankings = []; // [0:冠軍, 1:亞軍, 2:季軍]
         
         let timerInterval = null;
-        let timeLeft = 25 * 60; 
+        let timeLeft = 3; 
         let isRunning = false;
         let activeTimerMode = 'swiss'; 
 
@@ -696,7 +696,7 @@
 
         function resetTimer(mode = activeTimerMode) {
             pauseTimer(mode);
-            timeLeft = 25 * 60; 
+            timeLeft = 3; 
             updateDisplay(mode);
         }
 
