@@ -365,6 +365,43 @@
             background: #111; color: white; border: 1px solid #555; 
             border-radius: 4px; margin: 0;
         }
+        .ko-select.ko-bo3-select {
+            width: 82px;
+        }
+        .gf-mode-switcher {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .gf-mode-label {
+            font-size: 0.9rem;
+            color: #ccc;
+            font-weight: bold;
+        }
+        .gf-mode-btn {
+            background: #252525;
+            color: #aaa;
+            border: 1px solid #555;
+            padding: 6px 14px;
+            margin: 0;
+            font-size: 0.88rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .gf-mode-btn:hover:not(:disabled) {
+            background: #383838;
+            color: #fff;
+            transform: none;
+        }
+        .gf-mode-btn.active {
+            background: var(--gold);
+            color: #000;
+            border-color: var(--gold);
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.35);
+        }
 
         /* 樹狀圖粗連線 (8px 超醒目淺藍色) */
         .fork-stem {
@@ -496,6 +533,7 @@
         let knockoutPlayers = [];
         let deMatches = {};
         let deCurrentRound = 1;
+        let gfFormat = 'bo1'; // 'bo1' (預設) 或 'bo3'
         let finalRankings = []; // [0:冠軍, 1:亞軍, 2:季軍]
         
         let timerInterval = null;
@@ -588,6 +626,7 @@
                 knockoutPlayers: [],
                 deMatches: {},
                 deCurrentRound: 1,
+                gfFormat: 'bo1',
                 koSelections: {},
                 finalRankings: [],
                 timeLeft: 3,
@@ -615,6 +654,7 @@
             rec.knockoutPlayers = JSON.parse(JSON.stringify(knockoutPlayers));
             rec.deMatches = JSON.parse(JSON.stringify(deMatches));
             rec.deCurrentRound = deCurrentRound;
+            rec.gfFormat = gfFormat;
             rec.finalRankings = JSON.parse(JSON.stringify(finalRankings));
             rec.timeLeft = timeLeft;
             rec.activeTimerMode = activeTimerMode;
@@ -822,6 +862,7 @@
             knockoutPlayers = JSON.parse(JSON.stringify(rec.knockoutPlayers || []));
             deMatches = JSON.parse(JSON.stringify(rec.deMatches || {}));
             deCurrentRound = rec.deCurrentRound || 1;
+            gfFormat = rec.gfFormat || 'bo1';
             finalRankings = JSON.parse(JSON.stringify(rec.finalRankings || []));
             timeLeft = typeof rec.timeLeft === 'number' ? rec.timeLeft : 3;
             activeTimerMode = rec.activeTimerMode || 'swiss';
@@ -934,6 +975,7 @@
             knockoutPlayers = [];
             deMatches = {};
             deCurrentRound = 1;
+            gfFormat = 'bo1';
             finalRankings = [];
             timeLeft = 3;
             activeTimerMode = 'swiss';
@@ -1072,9 +1114,10 @@
             saveCurrentTournamentState();
         }
 
-        // === 畫面 3 -> 畫面 4 (前四強 雙淘汰 - 一戰定生死) ===
+        // === 畫面 3 -> 畫面 4 (前四強 雙淘汰 - 一戰定生死 / 冠亞可切換BO3) ===
         function startKnockoutPhase() {
             activeTimerMode = 'ko';
+            gfFormat = 'bo1';
             players.sort((a, b) => b.score - a.score);
             
             let topCount = Math.min(4, players.length);
@@ -1091,7 +1134,7 @@
                 w3: { id: 'w3', title: '勝部決賽', p1: null, p2: null, winner: null, loser: null },
                 l1: { id: 'l1', title: '敗部首輪', p1: null, p2: null, winner: null, loser: null },
                 l2: { id: 'l2', title: '敗部決賽 (爭奪季軍)', p1: null, p2: null, winner: null, loser: null },
-                gf1: { id: 'gf1', title: '總決賽 (一戰定生死)', p1: null, p2: null, winner: null, loser: null }
+                gf1: { id: 'gf1', title: '總決賽 (BO1 一戰定生死)', p1: null, p2: null, winner: null, loser: null }
             };
 
             deCurrentRound = 1;
@@ -1099,6 +1142,16 @@
             renderKnockoutTree();
             resetTimer('ko');
             switchScreen('screen-3', 'screen-4');
+        }
+
+        function setGrandFinalsFormat(format) {
+            if (deCurrentRound === 99 || gfFormat === format) return;
+            gfFormat = format;
+            if (deMatches && deMatches.gf1) {
+                deMatches.gf1.title = gfFormat === 'bo3' ? '總決賽 (BO3 三戰兩勝)' : '總決賽 (BO1 一戰定生死)';
+            }
+            renderKnockoutTree();
+            saveCurrentTournamentState();
         }
 
         function getMatchesForRound(round) {
@@ -1130,21 +1183,35 @@
             let p = match[playerKey];
             if (!p) return `<div class="ko-row-player"><span class="ko-name" style="color:#555">待定 (TBD)</span></div>`;
 
+            const isBo3Gf = match.id === 'gf1' && gfFormat === 'bo3';
             let resultSelect = '';
             if (p.isBye) {
                 resultSelect = `<span style="color:var(--disabled); font-size: 0.9rem;">- (輪空)</span>`;
             } else if (isCurrentRound && match.winner === null) {
-                resultSelect = `
-                    <select class="ko-select" data-match="${match.id}" data-side="${playerKey}" onchange="syncKoSelect(this); checkKoMatchesDone(); saveCurrentTournamentState();">
-                        <option value="" disabled selected>-</option>
-                        <option value="win">贏</option><option value="loss">輸</option><option value="draw">平</option>
-                    </select>
-                `;
-            } else if (match.winner) {
-                if (!match.isDoubleLoss && match.winner.id === p.id) {
-                    resultSelect = `<span style="color:var(--success); font-size: 0.9rem; font-weight: bold;">勝</span>`;
+                if (isBo3Gf) {
+                    resultSelect = `
+                        <select class="ko-select ko-bo3-select" data-match="${match.id}" data-side="${playerKey}" onchange="syncKoSelect(this); checkKoMatchesDone(); saveCurrentTournamentState();">
+                            <option value="0" selected>0 勝</option>
+                            <option value="1">1 勝</option>
+                            <option value="2">2 勝</option>
+                            <option value="loss">敗(雙敗)</option>
+                        </select>
+                    `;
                 } else {
-                    resultSelect = `<span style="color:var(--danger); font-size: 0.9rem;">敗</span>`;
+                    resultSelect = `
+                        <select class="ko-select" data-match="${match.id}" data-side="${playerKey}" onchange="syncKoSelect(this); checkKoMatchesDone(); saveCurrentTournamentState();">
+                            <option value="" disabled selected>-</option>
+                            <option value="win">贏</option><option value="loss">輸</option><option value="draw">平</option>
+                        </select>
+                    `;
+                }
+            } else if (match.winner) {
+                const winsCount = match[playerKey + 'Wins'];
+                const winsPrefix = (isBo3Gf && typeof winsCount === 'number') ? `${winsCount}勝・` : '';
+                if (!match.isDoubleLoss && match.winner.id === p.id) {
+                    resultSelect = `<span style="color:var(--success); font-size: 0.9rem; font-weight: bold;">${winsPrefix}勝</span>`;
+                } else {
+                    resultSelect = `<span style="color:var(--danger); font-size: 0.9rem;">${winsPrefix}敗</span>`;
                 }
             }
 
@@ -1165,6 +1232,9 @@
         function getKoCard(matchKey) {
             let m = deMatches[matchKey];
             if (!m) return '';
+            if (matchKey === 'gf1') {
+                m.title = gfFormat === 'bo3' ? '總決賽 (BO3 三戰兩勝)' : '總決賽 (BO1 一戰定生死)';
+            }
             let isCurrentRound = getMatchesForRound(deCurrentRound).includes(matchKey);
             let activeClass = isCurrentRound && m.winner === null ? 'active-match' : '';
 
@@ -1221,10 +1291,19 @@
                 </div>
             </div>`;
 
-            // 【第三區：總決賽 (移除 Reset)】
+            // 【第三區：總決賽 (支援切換 BO1 / BO3)】
             html += `
             <div class="bracket-section" style="border-color: var(--gold);">
                 <h3 style="color: var(--gold);">🟨 總決賽 (Grand Finals)</h3>
+                <div class="gf-mode-switcher">
+                    <span class="gf-mode-label">冠亞賽制：</span>
+                    <button type="button" class="gf-mode-btn ${gfFormat === 'bo1' ? 'active' : ''}"
+                        ${deCurrentRound === 99 ? 'disabled' : ''}
+                        onclick="setGrandFinalsFormat('bo1')">BO1 (單場決勝)</button>
+                    <button type="button" class="gf-mode-btn ${gfFormat === 'bo3' ? 'active' : ''}"
+                        ${deCurrentRound === 99 ? 'disabled' : ''}
+                        onclick="setGrandFinalsFormat('bo3')">BO3 (三戰兩勝)</button>
+                </div>
                 <div class="vertical-tree">
                     <div class="tree-row">${getKoCard('gf1')}</div>
                 </div>
@@ -1250,10 +1329,22 @@
 
         function syncKoSelect(element) {
             const card = element.closest('.ko-card');
+            const matchId = element.getAttribute('data-match');
             const side = element.getAttribute('data-side');
             const oppSide = side === 'p1' ? 'p2' : 'p1';
             const oppSelect = card.querySelector(`.ko-select[data-side="${oppSide}"]`);
             if (!oppSelect) return;
+
+            if (matchId === 'gf1' && gfFormat === 'bo3') {
+                // BO3 模式：先達 2 勝者為冠軍，不可雙方同時 2 勝
+                if (element.value === '2') {
+                    if (oppSelect.value === '2') oppSelect.value = '1';
+                    else if (oppSelect.value === 'loss') oppSelect.value = '0';
+                } else if (element.value === '0' || element.value === '1') {
+                    if (oppSelect.value === 'loss') oppSelect.value = '0';
+                }
+                return;
+            }
 
             if (element.value === 'win') {
                 oppSelect.value = 'loss';
@@ -1278,7 +1369,19 @@
                 const card = document.getElementById(m.id);
                 if(card) {
                     const selects = card.querySelectorAll('select');
-                    if(selects.length > 0) {
+                    if (mk === 'gf1' && gfFormat === 'bo3') {
+                        const p1Sel = card.querySelector('.ko-select[data-side="p1"]');
+                        const p2Sel = card.querySelector('.ko-select[data-side="p2"]');
+                        if (p1Sel && p2Sel) {
+                            const v1 = p1Sel.value;
+                            const v2 = p2Sel.value;
+                            const hasTwoWinWinner = (v1 === '2' && (v2 === '0' || v2 === '1')) || (v2 === '2' && (v1 === '0' || v1 === '1'));
+                            const isDoubleLoss = v1 === 'loss' && v2 === 'loss';
+                            if (!hasTwoWinWinner && !isDoubleLoss) {
+                                allDone = false;
+                            }
+                        }
+                    } else if(selects.length > 0) {
                         selects.forEach(s => { if(s.value === '') allDone = false; });
                     }
                 }
@@ -1324,7 +1427,7 @@
                 return; // 終止推進
             }
 
-            // 2. 寫入勝負結果 (含雙敗判定)
+            // 2. 寫入勝負結果 (含雙敗判定與總決賽 BO3 勝場數判定)
             activeKeys.forEach(mk => {
                 let m = deMatches[mk];
                 if (m.winner !== null) return; 
@@ -1333,23 +1436,41 @@
                     const p1Select = card.querySelector('.ko-select[data-side="p1"]');
                     const p2Select = card.querySelector('.ko-select[data-side="p2"]');
                     if (p1Select && p2Select) {
-                        if (p1Select.value === 'win') {
-                            m.winner = m.p1;
-                            m.loser = m.p2;
-                        } else if (p2Select.value === 'win') {
-                            m.winner = m.p2;
-                            m.loser = m.p1;
-                        } else if (p1Select.value === 'loss' && p2Select.value === 'loss') {
-                            // 雙敗：雙方皆判敗淘汰，下一輪對應位置以「輪空 (Bye)」遞補
-                            m.isDoubleLoss = true;
-                            m.winner = { id: 'bye-dl-win-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
-                            m.loser = { id: 'bye-dl-loss-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
+                        if (mk === 'gf1' && gfFormat === 'bo3') {
+                            if (p1Select.value === '2') {
+                                m.winner = m.p1;
+                                m.loser = m.p2;
+                                m.p1Wins = 2;
+                                m.p2Wins = parseInt(p2Select.value, 10) || 0;
+                            } else if (p2Select.value === '2') {
+                                m.winner = m.p2;
+                                m.loser = m.p1;
+                                m.p2Wins = 2;
+                                m.p1Wins = parseInt(p1Select.value, 10) || 0;
+                            } else if (p1Select.value === 'loss' && p2Select.value === 'loss') {
+                                m.isDoubleLoss = true;
+                                m.winner = { id: 'bye-dl-win-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
+                                m.loser = { id: 'bye-dl-loss-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
+                            }
+                        } else {
+                            if (p1Select.value === 'win') {
+                                m.winner = m.p1;
+                                m.loser = m.p2;
+                            } else if (p2Select.value === 'win') {
+                                m.winner = m.p2;
+                                m.loser = m.p1;
+                            } else if (p1Select.value === 'loss' && p2Select.value === 'loss') {
+                                // 雙敗：雙方皆判敗淘汰，下一輪對應位置以「輪空 (Bye)」遞補
+                                m.isDoubleLoss = true;
+                                m.winner = { id: 'bye-dl-win-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
+                                m.loser = { id: 'bye-dl-loss-' + m.id, name: '輪空 (Bye)', score: 0, isBye: true, isVacant: true };
+                            }
                         }
                     }
                 }
             });
 
-            // 3. 雙淘汰樹狀推進邏輯 (一戰定生死版)
+            // 3. 雙淘汰樹狀推進邏輯 (一戰定生死 / BO3 版)
             if (deCurrentRound === 1) {
                 deMatches.w3.p1 = deMatches.w1.winner;
                 deMatches.w3.p2 = deMatches.w2.winner;
